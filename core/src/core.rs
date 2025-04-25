@@ -20,21 +20,8 @@ where
     }
 }
 
-// パーサーの拡張メソッドを提供するトレイト
-pub trait ParserExt<I, O, E>: Parser<I, O, E> + Sized {
-    // 成功結果を変換
-    fn map<F, O2>(self, f: F) -> impl Parser<I, O2, E>
-    where
-        F: Fn(O) -> O2,
-    {
-        move |input: &I| {
-            match self.parse(input) {
-                PResult::Ok(o, i) => PResult::Ok(f(o), i),
-                PResult::Err(e, c) => PResult::Err(e, c),
-            }
-        }
-    }
-    
+// パーサー演算子を提供するトレイト
+pub trait OperatorParser<I, O, E>: Parser<I, O, E> + Sized {
     // パーサーを選択的に適用
     fn or<P>(self, alt: P) -> impl Parser<I, O, E>
     where
@@ -45,6 +32,22 @@ pub trait ParserExt<I, O, E>: Parser<I, O, E> + Sized {
                 PResult::Err(e, true) => PResult::Err(e, true),
                 PResult::Err(_, false) => alt.parse(input),
                 ok @ PResult::Ok(..) => ok,
+            }
+        }
+    }
+}
+
+// パーサーの変換メソッドを提供するトレイト
+pub trait ParserExt<I, O, E>: Parser<I, O, E> + Sized {
+    // 成功結果を変換
+    fn map<F, O2>(self, f: F) -> impl Parser<I, O2, E>
+    where
+        F: Fn(O) -> O2,
+    {
+        move |input: &I| {
+            match self.parse(input) {
+                PResult::Ok(o, i) => PResult::Ok(f(o), i),
+                PResult::Err(e, c) => PResult::Err(e, c),
             }
         }
     }
@@ -66,6 +69,9 @@ pub trait ParserExt<I, O, E>: Parser<I, O, E> + Sized {
 
 // すべてのパーサーに拡張メソッドを提供
 impl<T, I, O, E> ParserExt<I, O, E> for T where T: Parser<I, O, E> {}
+
+// すべてのパーサーに演算子メソッドを提供
+impl<T, I, O, E> OperatorParser<I, O, E> for T where T: Parser<I, O, E> {}
 
 // 常に成功するパーサー
 pub fn pure<I: Clone, O: Clone, E>(value: O) -> impl Parser<I, O, E> {
