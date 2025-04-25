@@ -221,4 +221,73 @@ mod tests {
       _ => panic!("Pure parser should always succeed"),
     }
   }
+  
+  #[test]
+  fn test_and_then() {
+    // 連続した文字列のパース
+    let hello = string::<ParseError>("hello");
+    let world = string::<ParseError>("world");
+    
+    // "hello world" を順番にパースする
+    let hello_world = hello.and_then(world);
+    
+    // 成功ケース
+    match hello_world.parse(&"helloworld".to_string()) {
+      PResult::Ok((first, second), rest) => {
+        assert_eq!(first, "hello");
+        assert_eq!(second, "world");
+        assert_eq!(rest, "");
+      }
+      _ => panic!("and_then should parse both strings successfully"),
+    }
+    
+    // 失敗ケース（最初のパーサーは成功するが、2番目が失敗）
+    match hello_world.parse(&"hello test".to_string()) {
+      PResult::Err(_, _) => {}
+      _ => panic!("and_then should fail when second parser fails"),
+    }
+  }
+  
+  #[test]
+  fn test_complex_parsing() {
+    // 数字の後にアルファベット文字が続くパターンをパースする例
+    let digit = one_of::<ParseError>(&['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+    let alpha = move |input: &String| -> PResult<String, char, ParseError> {
+      if let Some(c) = input.chars().next() {
+        if c.is_alphabetic() {
+          let rest = input[c.len_utf8()..].to_string();
+          PResult::Ok(c, rest)
+        } else {
+          PResult::Err(ParseError(format!("Expected alphabetic character, but got '{}'", c)), false)
+        }
+      } else {
+        PResult::Err(ParseError("Input is empty".to_string()), false)
+      }
+    };
+    
+    // 数字とアルファベットのペアをパース
+    let digit_alpha = digit.and_then(alpha);
+    
+    // 成功ケース
+    match digit_alpha.parse(&"5a123".to_string()) {
+      PResult::Ok((d, a), rest) => {
+        assert_eq!(d, '5');
+        assert_eq!(a, 'a');
+        assert_eq!(rest, "123");
+      }
+      _ => panic!("Complex parsing should match digit followed by alpha"),
+    }
+    
+    // 失敗ケース（数字の後に数字）
+    match digit_alpha.parse(&"55abc".to_string()) {
+      PResult::Err(_, _) => {}
+      _ => panic!("Complex parsing should fail when digit is not followed by alpha"),
+    }
+    
+    // 失敗ケース（アルファベットで始まる）
+    match digit_alpha.parse(&"abc123".to_string()) {
+      PResult::Err(_, _) => {}
+      _ => panic!("Complex parsing should fail when input doesn't start with digit"),
+    }
+  }
 }
