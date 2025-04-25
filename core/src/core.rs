@@ -73,6 +73,16 @@ pub trait OperatorParser<I, O, E>: Parser<I, O, E> + Sized {
       PResult::Err(e, c) => PResult::Err(e, c),
     }
   }
+  
+  // 結果を捨てて()を返す
+  fn discard(self) -> impl Parser<I, (), E>
+  where
+    I: Clone, {
+    move |input: &I| match self.parse(input) {
+      PResult::Ok(_, i) => PResult::Ok((), i),
+      PResult::Err(e, c) => PResult::Err(e, c),
+    }
+  }
 }
 
 // パーサーの変換メソッドを提供するトレイト
@@ -236,6 +246,38 @@ mod tests {
         assert_eq!(rest, "input");
       }
       _ => panic!("skip_right should keep only the first parser's result"),
+    }
+  }
+  
+  #[test]
+  fn test_discard() {
+    // 結果を捨てて()を返すテスト
+    let p = pure::<String, &'static str, TestError>("hello");
+    let discarded = p.discard();
+    
+    match discarded.parse(&"input".to_string()) {
+      PResult::Ok(result, rest) => {
+        // 結果が()であることを確認
+        assert_eq!(result, ());
+        // 入力は維持される
+        assert_eq!(rest, "input");
+      }
+      _ => panic!("discard should return unit value ()"),
+    }
+    
+    // 複数のパーサーとの組み合わせテスト
+    let p1 = pure::<String, &'static str, TestError>("hello");
+    let p2 = pure::<String, &'static str, TestError>("world");
+    
+    // p1の結果を捨て、p2を実行
+    let combined = p1.discard().skip_left(p2);
+    
+    match combined.parse(&"input".to_string()) {
+      PResult::Ok(result, rest) => {
+        assert_eq!(result, "world");
+        assert_eq!(rest, "input");
+      }
+      _ => panic!("discard combined with skip_left should return p2's result"),
     }
   }
 }
