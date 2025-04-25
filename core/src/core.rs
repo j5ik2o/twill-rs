@@ -22,7 +22,7 @@ where
 
 // パーサー演算子を提供するトレイト
 pub trait OperatorParser<I, O, E>: Parser<I, O, E> + Sized {
-    // パーサーを選択的に適用
+    // パーサーを選択的に適用（選言）
     fn or<P>(self, alt: P) -> impl Parser<I, O, E>
     where
         P: Parser<I, O, E>,
@@ -32,6 +32,26 @@ pub trait OperatorParser<I, O, E>: Parser<I, O, E> + Sized {
                 PResult::Err(e, true) => PResult::Err(e, true),
                 PResult::Err(_, false) => alt.parse(input),
                 ok @ PResult::Ok(..) => ok,
+            }
+        }
+    }
+    
+    // 連続パーサー（連言）
+    fn and_then<P2, O2>(self, p2: P2) -> impl Parser<I, (O, O2), E>
+    where
+        I: Clone,
+        O: Clone,
+        P2: Parser<I, O2, E>,
+    {
+        move |input: &I| {
+            match self.parse(input) {
+                PResult::Ok(o1, i1) => {
+                    match p2.parse(&i1) {
+                        PResult::Ok(o2, i2) => PResult::Ok((o1.clone(), o2), i2),
+                        PResult::Err(e, c) => PResult::Err(e, c),
+                    }
+                },
+                PResult::Err(e, c) => PResult::Err(e, c),
             }
         }
     }
@@ -128,6 +148,44 @@ mod tests {
         match combined.parse(&"input".to_string()) {
             PResult::Ok(val, _) => assert_eq!(val, "first"),
             _ => panic!("Or should return first result on success"),
+        }
+    }
+    
+    #[test]
+    fn test_and_then() {
+        // 二つの文字列を連続してパースするテスト
+        let p1 = pure::<String, &'static str, TestError>("hello");
+        let p2 = pure::<String, &'static str, TestError>("world");
+        
+        let combined = p1.and_then(p2);
+        
+        match combined.parse(&"input".to_string()) {
+            PResult::Ok((first, second), rest) => {
+                assert_eq!(first, "hello");
+                assert_eq!(second, "world");
+                assert_eq!(rest, "input");
+            },
+            _ => panic!("and_then should combine two parsers"),
+        }
+    }
+    
+    #[test]
+    fn test_and_then_with_error() {
+        // 最初のパーサーは成功するが、2番目のパーサーが失敗するケース
+        let success_parser = pure::<String, &'static str, TestError>("ok");
+        
+        // 常に失敗するパーサー
+        let failure_parser = move |_: &String| -> PResult<String, &'static str, TestError> {
+            PResult::Err(TestError, false)
+        };
+        
+        let combined = success_parser.and_then(failure_parser);
+        
+        match combined.parse(&"test".to_string()) {
+            PResult::Err(_, committed) => {
+                assert!(!committed, "Error from second parser should not be committed");
+            },
+            _ => panic!("and_then should fail when second parser fails"),
         }
     }
 }
