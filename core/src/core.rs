@@ -33,7 +33,7 @@ pub trait OperatorParser<I, O, E>: Parser<I, O, E> + Sized {
     }
   }
 
-  // 連続パーサー（連言）
+  // 連続パーサー（連言）- 標準版（Cloneが必要）
   fn and_then<P2, O2>(self, p2: P2) -> impl Parser<I, (O, O2), E>
   where
     I: Clone,
@@ -42,6 +42,32 @@ pub trait OperatorParser<I, O, E>: Parser<I, O, E> + Sized {
     move |input: &I| match self.parse(input) {
       PResult::Ok(o1, i1) => match p2.parse(&i1) {
         PResult::Ok(o2, i2) => PResult::Ok((o1.clone(), o2), i2),
+        PResult::Err(e, c) => PResult::Err(e, c),
+      },
+      PResult::Err(e, c) => PResult::Err(e, c),
+    }
+  }
+  
+  // 連続パーサー（第1パーサーの結果を捨てる）- Clone回避
+  fn skip_left<P2, O2>(self, p2: P2) -> impl Parser<I, O2, E>
+  where
+    I: Clone,
+    P2: Parser<I, O2, E>, {
+    move |input: &I| match self.parse(input) {
+      PResult::Ok(_, i1) => p2.parse(&i1),
+      PResult::Err(e, c) => PResult::Err(e, c),
+    }
+  }
+  
+  // 連続パーサー（第2パーサーの結果を捨てる）- Clone回避
+  fn skip_right<P2>(self, p2: P2) -> impl Parser<I, O, E>
+  where
+    I: Clone,
+    O: Clone,
+    P2: Parser<I, (), E>, {
+    move |input: &I| match self.parse(input) {
+      PResult::Ok(o1, i1) => match p2.parse(&i1) {
+        PResult::Ok(_, i2) => PResult::Ok(o1.clone(), i2),
         PResult::Err(e, c) => PResult::Err(e, c),
       },
       PResult::Err(e, c) => PResult::Err(e, c),
@@ -83,6 +109,11 @@ impl<T, I, O, E> OperatorParser<I, O, E> for T where T: Parser<I, O, E> {}
 pub fn pure<I: Clone, O: Clone, E>(value: O) -> impl Parser<I, O, E> {
   let value = value.clone();
   move |input: &I| PResult::Ok(value.clone(), input.clone())
+}
+
+// 何もしないパーサー - 入力を消費せず値も返さない
+pub fn empty<I: Clone, E>() -> impl Parser<I, (), E> {
+  move |input: &I| PResult::Ok((), input.clone())
 }
 
 #[cfg(test)]
@@ -154,6 +185,23 @@ mod tests {
       _ => panic!("and_then should combine two parsers"),
     }
   }
+  
+  #[test]
+  fn test_skip_left() {
+    // 二つの文字列を連続してパースするテスト（最初の結果を捨てる）
+    let p1 = pure::<String, &'static str, TestError>("hello");
+    let p2 = pure::<String, &'static str, TestError>("world");
+
+    let combined = p1.skip_left(p2);
+
+    match combined.parse(&"input".to_string()) {
+      PResult::Ok(result, rest) => {
+        assert_eq!(result, "world"); // 最初の結果"hello"は捨てられる
+        assert_eq!(rest, "input");
+      }
+      _ => panic!("skip_left should use only the second parser's result"),
+    }
+  }
 
   #[test]
   fn test_and_then_with_error() {
@@ -171,6 +219,23 @@ mod tests {
         assert!(!committed, "Error from second parser should not be committed");
       }
       _ => panic!("and_then should fail when second parser fails"),
+    }
+  }
+  
+  #[test]
+  fn test_skip_right() {
+    // 最初のパーサーの結果だけを保持するテスト
+    let p1 = pure::<String, &'static str, TestError>("hello");
+    let p2 = empty::<String, TestError>();
+    
+    let combined = p1.skip_right(p2);
+    
+    match combined.parse(&"input".to_string()) {
+      PResult::Ok(result, rest) => {
+        assert_eq!(result, "hello");
+        assert_eq!(rest, "input");
+      }
+      _ => panic!("skip_right should keep only the first parser's result"),
     }
   }
 }
