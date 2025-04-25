@@ -1,5 +1,5 @@
 // 基本的な文字列パーサーの例
-use crate::core::{pure, OperatorParser, PResult, Parser, ParserExt};
+use crate::core::{PResult, Parser};
 
 // 特定の文字列にマッチするパーサー
 pub fn string<E: Clone>(expected: &'static str) -> impl Parser<String, &'static str, E>
@@ -52,7 +52,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::core::{OperatorParser, ParserExt};
+  use crate::core::{pure, OperatorParser, ParserExt};
 
   // 簡単なエラー型
   #[derive(Debug, PartialEq, Clone)]
