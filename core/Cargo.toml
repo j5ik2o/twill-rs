@@ -1,5 +1,5 @@
 [package]
-name = "parser-core-rs"
+name = "twill-core"
 version = "1.0.0"
 edition = "2021"
 description = "A Rust crate for parser combinators"
