@@ -6,7 +6,7 @@ pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str>
     let input = context.input();
     let expected_chars: Vec<char> = expected.chars().collect();
     if input.len() >= expected_chars.len() && input[..expected_chars.len()] == expected_chars[..] {
-      let new_context = context.next(expected_chars.len());
+      let new_context = context.advance(expected_chars.len());
       ParseResult::successful(expected, new_context)
     } else {
       let error_msg = format!("Expected '{}', but got something else", expected);
@@ -21,7 +21,7 @@ pub fn any_char<'a>() -> impl Parser<'a, char, char> {
   move |context: &ParseContext<'a, char>| {
     let input = context.input();
     if let Some(&c) = input.get(0) {
-      let new_context = context.next(1);
+      let new_context = context.next();
       ParseResult::successful(c, new_context)
     } else {
       ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
@@ -39,7 +39,7 @@ pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
     let input = context.input();
     if let Some(&c) = input.get(0) {
       if chars.contains(&c) {
-        let new_context = context.next(1);
+        let new_context = context.next();
         ParseResult::successful(c, new_context)
       } else {
         let error_msg = format!("Expected one of {:?}, but got '{}'", chars, c);

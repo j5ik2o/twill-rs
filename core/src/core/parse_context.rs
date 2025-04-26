@@ -25,9 +25,14 @@ impl<'a, I> ParseContext<'a, I> {
     self.offset
   }
 
-  /// Create a new context with added offset
-  pub fn add_offset(&self, num_chars: usize) -> ParseContext<'a, I> {
-    Self::new(self.input, self.offset + num_chars)
+  /// Create a new context by advancing n positions
+  pub fn advance(&self, n: usize) -> ParseContext<'a, I> {
+    Self::new(self.input, self.offset + n)
+  }
+
+  /// Create a new context by advancing exactly 1 position
+  pub fn next(&self) -> ParseContext<'a, I> {
+    Self::new(self.input, self.offset + 1)
   }
 
   /// Get the remaining input slice
@@ -38,11 +43,6 @@ impl<'a, I> ParseContext<'a, I> {
   /// Get a slice of specified length from current position
   pub fn slice_with_len(&self, n: usize) -> &'a [I] {
     &self.input[self.offset..self.offset + n]
-  }
-
-  /// Create a new context advancing by n positions
-  pub fn next(&self, n: usize) -> ParseContext<'a, I> {
-    Self::new(self.input, self.offset + n)
   }
 
   /// Get the original input
