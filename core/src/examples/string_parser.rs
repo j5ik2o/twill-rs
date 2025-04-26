@@ -1,4 +1,4 @@
-use crate::core::{ParseError, ParseResult, Parser};
+use crate::core::{ParseError, ParseResult, Parser, pure, OperatorParser, ParserExt};
 
 // Parser that matches a specific string
 pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str> {

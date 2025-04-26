@@ -1,5 +1,4 @@
-use crate::core::{ParseError, ParseResult, CommittedStatus};
-use crate::core::parser::{Parser, pure, empty};
+use crate::core::{ParseError, ParseResult, CommittedStatus, Parser, pure, empty};
 
 #[cfg(test)]
 mod tests {
