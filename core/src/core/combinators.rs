@@ -6,7 +6,7 @@ use crate::core::parser::Parser;
 pub fn pure<'a, I: 'a, A: Clone>(value: A) -> impl Parser<'a, I, A> {
   let value = value.clone();
   move |input: &ParseContext<'a, I>| {
-    let context = ParseContext::new(input.original_input(), input.next_offset());
+    let context = input.with_same_state();
     ParseResult::successful(value.clone(), context)
   }
 }
@@ -14,7 +14,8 @@ pub fn pure<'a, I: 'a, A: Clone>(value: A) -> impl Parser<'a, I, A> {
 /// Do nothing parser - does not consume input and returns no value
 pub fn empty<'a, I: 'a>() -> impl Parser<'a, I, ()> {
   move |input: &ParseContext<'a, I>| {
-    let context = ParseContext::new(input.original_input(), input.next_offset());
+    // 同じ状態の新しいコンテキストを作成
+    let context = input.with_same_state();
     ParseResult::successful((), context)
   }
 }

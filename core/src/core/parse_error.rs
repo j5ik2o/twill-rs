@@ -41,12 +41,12 @@ impl<'a, I> Display for ParseError<'a, I> {
         ref message,
         ref context,
         ..
-      } => write!(f, "Mismatch at {}: {}", context.next_offset(), message),
+      } => write!(f, "Mismatch at {}: {}", context.offset(), message),
       ParseError::Conversion {
         ref message,
         ref context,
         ..
-      } => write!(f, "Conversion failed at {}: {}", context.next_offset(), message),
+      } => write!(f, "Conversion failed at {}: {}", context.offset(), message),
       ParseError::Expect {
         ref message,
         ref offset,
@@ -101,8 +101,8 @@ impl<'a, I> ParseError<'a, I> {
   pub fn offset(&self) -> Option<usize> {
     match self {
       ParseError::Incomplete => None,
-      ParseError::Mismatch { context, .. } => Some(context.next_offset()),
-      ParseError::Conversion { context, .. } => Some(context.next_offset()),
+      ParseError::Mismatch { context, .. } => Some(context.offset()),
+      ParseError::Conversion { context, .. } => Some(context.offset()),
       ParseError::Expect { offset, .. } => Some(*offset),
       ParseError::Custom { offset, .. } => Some(*offset),
     }

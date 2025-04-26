@@ -79,7 +79,7 @@ mod tests {
         context: new_context,
       } => {
         assert_eq!(value, "hello");
-        assert_eq!(new_context.next_offset(), 5);
+        assert_eq!(new_context.offset(), 5);
       }
       _ => panic!("String parser should match"),
     }
@@ -109,7 +109,7 @@ mod tests {
         context: new_context,
       } => {
         assert_eq!(value, 'a');
-        assert_eq!(new_context.next_offset(), 1);
+        assert_eq!(new_context.offset(), 1);
       }
       _ => panic!("Any char parser should succeed on non-empty input"),
     }
@@ -127,7 +127,7 @@ mod tests {
         context: new_context,
       } => {
         assert_eq!(value, '5');
-        assert_eq!(new_context.next_offset(), 1);
+        assert_eq!(new_context.offset(), 1);
       }
       _ => panic!("one_of parser should match on valid input"),
     }
