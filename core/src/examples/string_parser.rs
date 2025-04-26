@@ -1,46 +1,56 @@
-use crate::core::{ParseError, ParseResult, Parser, pure, OperatorParser, ParserExt};
+use crate::core::{ParseContext, ParseError, ParseResult, Parser};
 
 // Parser that matches a specific string
 pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str> {
-  move |input: &'a [char]| {
+  move |context: &ParseContext<'a, char>| {
+    let input = context.input();
     let expected_chars: Vec<char> = expected.chars().collect();
     if input.len() >= expected_chars.len() && input[..expected_chars.len()] == expected_chars[..] {
-      ParseResult::successful(expected, expected_chars.len())
+      let new_context = context.next(expected_chars.len());
+      ParseResult::successful(expected, new_context)
     } else {
       let error_msg = format!("Expected '{}', but got something else", expected);
-      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
-        input,
-        0,
-        input.len().min(expected_chars.len()),
-        error_msg,
-      ))
+      let length = input.len().min(expected_chars.len());
+      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(context.clone(), length, error_msg))
     }
   }
 }
 
 // Parser that matches any character
 pub fn any_char<'a>() -> impl Parser<'a, char, char> {
-  move |input: &'a [char]| {
+  move |context: &ParseContext<'a, char>| {
+    let input = context.input();
     if let Some(&c) = input.get(0) {
-      ParseResult::successful(c, 1)
+      let new_context = context.next(1);
+      ParseResult::successful(c, new_context)
     } else {
-      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(input, 0, 0, "Input is empty".to_string()))
+      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
+        context.clone(),
+        0,
+        "Input is empty".to_string(),
+      ))
     }
   }
 }
 
 // Parser that matches one of the given characters
 pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
-  move |input: &'a [char]| {
+  move |context: &ParseContext<'a, char>| {
+    let input = context.input();
     if let Some(&c) = input.get(0) {
       if chars.contains(&c) {
-        ParseResult::successful(c, 1)
+        let new_context = context.next(1);
+        ParseResult::successful(c, new_context)
       } else {
         let error_msg = format!("Expected one of {:?}, but got '{}'", chars, c);
-        ParseResult::failed_with_uncommitted(ParseError::of_mismatch(input, 0, 1, error_msg))
+        ParseResult::failed_with_uncommitted(ParseError::of_mismatch(context.clone(), 1, error_msg))
       }
     } else {
-      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(input, 0, 0, "Input is empty".to_string()))
+      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
+        context.clone(),
+        0,
+        "Input is empty".to_string(),
+      ))
     }
   }
 }
@@ -50,9 +60,11 @@ mod tests {
   use super::*;
   use crate::core::CommittedStatus;
 
-  // Helper function to create a static input
-  fn static_input(s: &'static str) -> &'static [char] {
-    Box::leak(s.chars().collect::<Vec<_>>().into_boxed_slice())
+  // Helper function to create a ParseContext
+  fn create_context(s: &'static str) -> ParseContext<'static, char> {
+    let chars: Vec<char> = s.chars().collect();
+    let slice = Box::leak(chars.into_boxed_slice());
+    ParseContext::new(slice, 0)
   }
 
   #[test]
@@ -60,18 +72,21 @@ mod tests {
     let hello = string("hello");
 
     // Success case
-    let input = static_input("hello world");
-    match hello.parse(input) {
-      ParseResult::Success { value, length } => {
+    let context = create_context("hello world");
+    match hello.parse(&context) {
+      ParseResult::Success {
+        value,
+        context: new_context,
+      } => {
         assert_eq!(value, "hello");
-        assert_eq!(length, 5);
+        assert_eq!(new_context.next_offset(), 5);
       }
       _ => panic!("String parser should match"),
     }
 
     // Failure case
-    let input = static_input("goodbye");
-    match hello.parse(input) {
+    let context = create_context("goodbye");
+    match hello.parse(&context) {
       ParseResult::Failure { committed_status, .. } => {
         assert_eq!(
           committed_status,
@@ -87,11 +102,14 @@ mod tests {
   fn test_any_char() {
     let p = any_char();
 
-    let input = static_input("abc");
-    match p.parse(input) {
-      ParseResult::Success { value, length } => {
+    let context = create_context("abc");
+    match p.parse(&context) {
+      ParseResult::Success {
+        value,
+        context: new_context,
+      } => {
         assert_eq!(value, 'a');
-        assert_eq!(length, 1);
+        assert_eq!(new_context.next_offset(), 1);
       }
       _ => panic!("Any char parser should succeed on non-empty input"),
     }
@@ -102,18 +120,21 @@ mod tests {
     let digits = one_of(&['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 
     // Success case
-    let input = static_input("5abc");
-    match digits.parse(input) {
-      ParseResult::Success { value, length } => {
+    let context = create_context("5abc");
+    match digits.parse(&context) {
+      ParseResult::Success {
+        value,
+        context: new_context,
+      } => {
         assert_eq!(value, '5');
-        assert_eq!(length, 1);
+        assert_eq!(new_context.next_offset(), 1);
       }
       _ => panic!("one_of parser should match on valid input"),
     }
 
     // Failure case
-    let input = static_input("abc");
-    match digits.parse(input) {
+    let context = create_context("abc");
+    match digits.parse(&context) {
       ParseResult::Failure { .. } => {}
       _ => panic!("one_of parser should fail on invalid input"),
     }

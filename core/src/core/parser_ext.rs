@@ -1,3 +1,4 @@
+use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::Parser;
 
@@ -7,11 +8,12 @@ pub trait ParserExt<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     F: Fn(A) -> B, {
-    move |input: &'a [I]| match self.parse(input) {
-      ParseResult::Success { value, length } => 
-        ParseResult::successful(f(value), length),
-      ParseResult::Failure { error, committed_status } => 
-        ParseResult::failed(error, committed_status),
+    move |input: &ParseContext<'a, I>| match self.parse(input) {
+      ParseResult::Success { value, context } => ParseResult::successful(f(value), context),
+      ParseResult::Failure {
+        error,
+        committed_status,
+      } => ParseResult::failed(error, committed_status),
     }
   }
 
@@ -20,13 +22,12 @@ pub trait ParserExt<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   where
     F: Fn(A) -> P,
     P: Parser<'a, I, B>, {
-    move |input: &'a [I]| match self.parse(input) {
-      ParseResult::Success { value, length } => {
-        let remaining = &input[length..];
-        f(value).parse(remaining).with_add_length(length)
-      },
-      ParseResult::Failure { error, committed_status } => 
-        ParseResult::failed(error, committed_status),
+    move |input: &ParseContext<'a, I>| match self.parse(input) {
+      ParseResult::Success { value, context } => f(value).parse(&context),
+      ParseResult::Failure {
+        error,
+        committed_status,
+      } => ParseResult::failed(error, committed_status),
     }
   }
 }
