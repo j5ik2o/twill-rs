@@ -29,8 +29,8 @@ impl<'a, I> ParseContext<'a, I> {
   pub fn advance(&self, n: usize) -> ParseContext<'a, I> {
     Self::new(self.input, self.offset + n)
   }
-  
-  pub fn advance_mut(&mut self, n: usize)  {
+
+  pub fn advance_mut(&mut self, n: usize) {
     self.offset += n;
   }
 
@@ -38,8 +38,8 @@ impl<'a, I> ParseContext<'a, I> {
   pub fn next(&self) -> ParseContext<'a, I> {
     Self::new(self.input, self.offset + 1)
   }
-  
-  pub fn next_mut(&mut self)  {
+
+  pub fn next_mut(&mut self) {
     self.offset += 1;
   }
 
@@ -76,7 +76,7 @@ impl<'a, I> ParseContext<'a, I> {
       0
     }
   }
-  
+
   /// Create a new context with the same state (same input and offset)
   pub fn with_same_state(&self) -> Self {
     Self::new(self.input, self.offset)

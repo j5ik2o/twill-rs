@@ -18,15 +18,17 @@ pub enum ParseError<'a, I> {
     message: String,
   },
   /// Error when parsing is interrupted
-  Incomplete,
+  Incomplete { context: ParseContext<'a, I> },
   /// Error when the result deviates from expectations
   Expect {
+    context: ParseContext<'a, I>,
     offset: usize,
     inner: Box<ParseError<'a, I>>,
     message: String,
   },
   /// Custom error
   Custom {
+    context: ParseContext<'a, I>,
     offset: usize,
     inner: Option<Box<ParseError<'a, I>>>,
     message: String,
@@ -36,7 +38,7 @@ pub enum ParseError<'a, I> {
 impl<'a, I> Display for ParseError<'a, I> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      ParseError::Incomplete => write!(f, "Incomplete"),
+      ParseError::Incomplete { .. } => write!(f, "Incomplete"),
       ParseError::Mismatch {
         ref message,
         ref context,
@@ -51,16 +53,19 @@ impl<'a, I> Display for ParseError<'a, I> {
         ref message,
         ref offset,
         ref inner,
+        ..
       } => write!(f, "{} at {}: {}", message, offset, inner),
       ParseError::Custom {
         ref message,
         ref offset,
         inner: Some(ref inner),
+        ..
       } => write!(f, "{} at {}, (inner: {})", message, offset, inner),
       ParseError::Custom {
         ref message,
         ref offset,
         inner: None,
+        ..
       } => write!(f, "{} at {}", message, offset),
     }
   }
@@ -87,7 +92,7 @@ impl<'a> ParseError<'a, u8> {
 impl<'a, I> ParseError<'a, I> {
   pub fn input(&self) -> Option<&'a [I]> {
     match self {
-      ParseError::Incomplete => None,
+      ParseError::Incomplete { .. } => None,
       ParseError::Mismatch { context, length, .. } => Some(context.slice_with_len(*length)),
       ParseError::Conversion { context, length, .. } => Some(context.slice_with_len(*length)),
       ParseError::Expect { ref inner, .. } => inner.input(),
@@ -100,7 +105,7 @@ impl<'a, I> ParseError<'a, I> {
 
   pub fn offset(&self) -> Option<usize> {
     match self {
-      ParseError::Incomplete => None,
+      ParseError::Incomplete { .. } => None,
       ParseError::Mismatch { context, .. } => Some(context.offset()),
       ParseError::Conversion { context, .. } => Some(context.offset()),
       ParseError::Expect { offset, .. } => Some(*offset),
@@ -138,17 +143,47 @@ impl<'a, I> ParseError<'a, I> {
 
   pub fn is_in_complete(&self) -> bool {
     match self {
-      ParseError::Incomplete => true,
+      ParseError::Incomplete { .. } => true,
       _ => false,
     }
   }
 
-  pub fn of_expect(offset: usize, inner: Box<ParseError<'a, I>>, message: String) -> Self {
-    ParseError::Expect { offset, inner, message }
+  pub fn context(&self) -> &ParseContext<'a, I> {
+    match self {
+      ParseError::Incomplete { context } => context,
+      ParseError::Mismatch { context, .. } => context,
+      ParseError::Conversion { context, .. } => context,
+      ParseError::Expect { context, .. } => context,
+      ParseError::Custom { context, .. } => context,
+    }
   }
 
-  pub fn of_custom(offset: usize, inner: Option<Box<ParseError<'a, I>>>, message: String) -> Self {
-    ParseError::Custom { offset, inner, message }
+  pub fn of_expect(
+    context: ParseContext<'a, I>,
+    offset: usize,
+    inner: Box<ParseError<'a, I>>,
+    message: String,
+  ) -> Self {
+    ParseError::Expect {
+      context,
+      offset,
+      inner,
+      message,
+    }
+  }
+
+  pub fn of_custom(
+    context: ParseContext<'a, I>,
+    offset: usize,
+    inner: Option<Box<ParseError<'a, I>>>,
+    message: String,
+  ) -> Self {
+    ParseError::Custom {
+      context,
+      offset,
+      inner,
+      message,
+    }
   }
 
   pub fn of_mismatch(context: ParseContext<'a, I>, length: usize, message: String) -> Self {
@@ -167,7 +202,7 @@ impl<'a, I> ParseError<'a, I> {
     }
   }
 
-  pub fn of_in_complete() -> Self {
-    ParseError::Incomplete
+  pub fn of_in_complete(context: ParseContext<'a, I>) -> Self {
+    ParseError::Incomplete { context }
   }
 }

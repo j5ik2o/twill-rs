@@ -1,9 +1,9 @@
 use crate::core::committed_status::CommittedStatus;
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
-use crate::core::ParseError;
 use crate::core::parser::Parser;
 use crate::core::parser_ext::ParserExt;
+use crate::core::ParseError;
 
 /// Trait providing parser operators
 pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> + Sized {
@@ -16,8 +16,8 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
 
   fn or_with<F, P>(self, f: F) -> impl Parser<'a, I, A>
   where
-      F: FnOnce() -> P,
-      P: Parser<'a, I, A>, {
+    F: FnOnce() -> P,
+    P: Parser<'a, I, A>, {
     move |input: &ParseContext<'a, I>| match self.parse(input) {
       ParseResult::Failure {
         committed_status: CommittedStatus::Uncommitted,
@@ -25,8 +25,8 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
       } => {
         let alt = f();
         alt.parse(input)
-      },
-      other => other
+      }
+      other => other,
     }
   }
 
@@ -48,15 +48,10 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
   /// Negation parser - succeeds when self fails, fails when self succeeds
   fn not(self) -> impl Parser<'a, I, ()> {
     move |input: &ParseContext<'a, I>| match self.parse(input) {
-      ParseResult::Success { .. } => {
-        let ps = input.with_same_state();
-        let parser_error = ParseError::of_mismatch(
-          ps,
-          0,
-          "not predicate failed".to_string(),
-        );
+      ParseResult::Success { context, .. } => {
+        let parser_error = ParseError::of_mismatch(context, 0, "not predicate failed".to_string());
         ParseResult::failed_with_uncommitted(parser_error)
-      },
+      }
       ParseResult::Failure { .. } => ParseResult::successful((), input.with_same_state()),
     }
   }
@@ -68,14 +63,11 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
     self.flat_map(move |_| p2)
   }
 
-
   /// Sequential parser (discard second parser result) - implemented using flat_map (no Clone required)
   fn skip_right<P2>(self, p2: P2) -> impl Parser<'a, I, A>
   where
     P2: Parser<'a, I, ()>, {
-    self.flat_map(move |a| {
-      p2.map(move |_| a)
-    })
+    self.flat_map(move |a| p2.map(move |_| a))
   }
 
   /// Discard the result and return ()
