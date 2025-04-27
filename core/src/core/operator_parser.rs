@@ -111,41 +111,41 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
      OP: FnOnce(A, A) -> A + 'a,
      A: Clone + std::fmt::Debug + 'a,
   {
-    // 元のパーサーをクロージャで包んで所有権の問題を回避
+    // Wrap the original parser in a closure to avoid ownership issues
     let initial_parser = self;
     let value_parser = move |ctx: ParseContext<'a, I>| initial_parser.clone().parse(ctx);
     
     move |parse_context: ParseContext<'a, I>| {
-      // 最初の値をパース
+      // Parse the initial value
       let initial_result = value_parser(parse_context);
       
       match initial_result {
-        // 最初の値がパースできなかった場合、デフォルト値を返す
+        // If the initial value could not be parsed, return the default value
         ParseResult::Failure { error, .. } => {
           ParseResult::successful(error.parse_context().with_same_state(), default_value.clone(), 0)
         },
-        // 最初の値がパースできた場合、演算子と次の値を繰り返し適用
+        // If the initial value was parsed, repeatedly apply operators and next values
         ParseResult::Success { parse_context: mut ctx, value: mut left_value, length: mut total_length } => {
-          // 残りの演算子と値のパースを繰り返す
+          // Repeatedly parse the remaining operators and values
           loop {
-            // 演算子をパース
+            // Parse the operator
             let op_result = op.clone().parse(ctx.with_same_state());
             if let ParseResult::Success { parse_context: op_ctx, value: operator, length: op_length } = op_result {
-              // 次の値をパース
-              let right_result = value_parser(op_ctx.advance(op_length));
+              // Parse the next value
+              let right_result = value_parser(op_ctx);
               if let ParseResult::Success { parse_context: new_ctx, value: right_value, length: right_length } = right_result {
-                // 演算子を適用して結果を更新（FnOnceはそのまま適用）
+                // Apply the operator to update the result (FnOnce is applied directly)
                 left_value = operator(left_value, right_value);
-                ctx = new_ctx.advance(right_length);
+                ctx = new_ctx;
                 total_length += op_length + right_length;
                 continue;
               }
             }
-            // パースに失敗したらループを抜ける
+            // Break the loop if parsing fails
             break;
           }
           
-          // 結果を返す
+          // Return the result
           ParseResult::successful(ctx, left_value, total_length)
         }
       }
