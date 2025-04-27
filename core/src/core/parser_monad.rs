@@ -36,6 +36,32 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
       } => ParseResult::failed(error, committed_status),
     }
   }
+
+  /// Filter parser results based on a predicate
+  fn with_filter<F>(self, f: F) -> impl Parser<'a, I, A>
+  where
+    F: FnOnce(&A) -> bool, {
+    move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
+      ParseResult::Success {
+        parse_context,
+        value,
+        length,
+      } => {
+        if f(&value) {
+          ParseResult::successful(parse_context, value, length)
+        } else {
+          let message = "Filter condition not satisfied".to_string();
+          let error =
+            crate::core::parse_error::ParseError::of_mismatch(parse_context.with_same_state(), length, message);
+          ParseResult::failed_with_uncommitted(error)
+        }
+      }
+      ParseResult::Failure {
+        error,
+        committed_status,
+      } => ParseResult::failed(error, committed_status),
+    }
+  }
 }
 
 /// Provide extension methods to all parsers
