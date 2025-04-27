@@ -3,7 +3,7 @@ use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::Parser;
 use crate::core::parser_monad::ParserMonad;
-use crate::core::{successful, ParseError};
+use crate::core::ParseError;
 
 /// Trait providing parser operators
 pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized {
@@ -99,17 +99,57 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
       self.parse(parse_context).with_uncommitted()
     }
   }
-  // /// Left associative binary operator parsing with default value
-  // ///
-  // /// This method takes an operator parser and a default value, and
-  // /// returns a parser that repeatedly applies the left associative operation on
-  // /// the parsed values, or returns the default value if no operations can be applied.
+  /// Left associative binary operator parsing with default value
+  ///
+  /// This method takes an operator parser and a default value, and
+  /// returns a parser that repeatedly applies the left associative operation on
+  /// the parsed values, or returns the default value if no operations can be applied.
   fn rest_left1<P2, OP>(self, op: P2, default_value: A) -> impl Parser<'a, I, A>
   where
-     P2: Parser<'a, I, OP>,
+     Self: Clone,
+     P2: Parser<'a, I, OP> + Clone,
      OP: FnOnce(A, A) -> A + 'a,
-     A: Clone + std::fmt::Debug + 'a, {
-    successful(default_value, 0)
+     A: Clone + std::fmt::Debug + 'a,
+  {
+    // 元のパーサーをクロージャで包んで所有権の問題を回避
+    let initial_parser = self;
+    let value_parser = move |ctx: ParseContext<'a, I>| initial_parser.clone().parse(ctx);
+    
+    move |parse_context: ParseContext<'a, I>| {
+      // 最初の値をパース
+      let initial_result = value_parser(parse_context);
+      
+      match initial_result {
+        // 最初の値がパースできなかった場合、デフォルト値を返す
+        ParseResult::Failure { error, .. } => {
+          ParseResult::successful(error.parse_context().with_same_state(), default_value.clone(), 0)
+        },
+        // 最初の値がパースできた場合、演算子と次の値を繰り返し適用
+        ParseResult::Success { parse_context: mut ctx, value: mut left_value, length: mut total_length } => {
+          // 残りの演算子と値のパースを繰り返す
+          loop {
+            // 演算子をパース
+            let op_result = op.clone().parse(ctx.with_same_state());
+            if let ParseResult::Success { parse_context: op_ctx, value: operator, length: op_length } = op_result {
+              // 次の値をパース
+              let right_result = value_parser(op_ctx.advance(op_length));
+              if let ParseResult::Success { parse_context: new_ctx, value: right_value, length: right_length } = right_result {
+                // 演算子を適用して結果を更新（FnOnceはそのまま適用）
+                left_value = operator(left_value, right_value);
+                ctx = new_ctx.advance(right_length);
+                total_length += op_length + right_length;
+                continue;
+              }
+            }
+            // パースに失敗したらループを抜ける
+            break;
+          }
+          
+          // 結果を返す
+          ParseResult::successful(ctx, left_value, total_length)
+        }
+      }
+    }
   }
 
 }
