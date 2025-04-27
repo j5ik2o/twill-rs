@@ -3,7 +3,7 @@ use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::Parser;
 use crate::core::parser_monad::ParserMonad;
-use crate::core::ParseError;
+use crate::core::{ParseError, successful};
 
 /// Trait providing parser operators
 pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized {
@@ -99,6 +99,20 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
       self.parse(parse_context).with_uncommitted()
     }
   }
+
+  fn rest_right1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
+  where
+      Self: Clone,
+      P2: Parser<'a, I, OP> + Clone,
+      OP: FnOnce(A, A) -> A + 'a,
+      A: Clone + std::fmt::Debug + 'a, {
+    let default_value = x.clone();
+    op.flat_map(move |f| {
+      let default_value = x.clone();
+      self.map(move |y| f(default_value, y))
+    }).or(move |pc: ParseContext<'a, I>| ParseResult::successful(pc, default_value.clone(), 0))
+  }
+
   /// Left associative binary operator parsing with default value
   ///
   /// This method takes an operator parser and a default value, and
@@ -132,11 +146,11 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
             let op_result = op.clone().parse(ctx.with_same_state());
             if let ParseResult::Success { parse_context: op_ctx, value: operator, length: op_length } = op_result {
               // Parse the next value
-              let right_result = value_parser(op_ctx.advance(op_length));
+              let right_result = value_parser(op_ctx);
               if let ParseResult::Success { parse_context: new_ctx, value: right_value, length: right_length } = right_result {
                 // Apply the operator to update the result (FnOnce is applied directly)
                 left_value = operator(left_value, right_value);
-                ctx = new_ctx.advance(right_length);
+                ctx = new_ctx;
                 total_length += op_length + right_length;
                 continue;
               }

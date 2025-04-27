@@ -183,4 +183,15 @@ impl<'a, I, A> ParseResult<'a, I, A> {
       _ => self,
     }
   }
+  
+  pub fn with_add_length(self, n: usize) -> Self {
+    match self {
+      ParseResult::Success { parse_context, value, length } => ParseResult::Success {
+        parse_context,
+        value,
+        length: length + n,
+      },
+      _ => self
+    }
+  }
 }
