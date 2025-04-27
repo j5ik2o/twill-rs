@@ -3,7 +3,7 @@ use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::Parser;
 use crate::core::parser_monad::ParserMonad;
-use crate::core::{ParseError, successful};
+use crate::core::ParseError;
 
 /// Trait providing parser operators
 pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized {
