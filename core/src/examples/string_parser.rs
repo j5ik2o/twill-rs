@@ -2,30 +2,30 @@ use crate::core::{ParseContext, ParseError, ParseResult, Parser};
 
 // Parser that matches a specific string
 pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str> {
-  move |context: ParseContext<'a, char>| {
-    let input = context.input();
+  move |mut parse_context: ParseContext<'a, char>| {
+    let input = parse_context.input();
     let expected_chars: Vec<char> = expected.chars().collect();
     if input.len() >= expected_chars.len() && input[..expected_chars.len()] == expected_chars[..] {
-      let new_context = context.advance(expected_chars.len());
-      ParseResult::successful(expected, new_context)
+      parse_context.advance_mut(expected_chars.len());
+      ParseResult::successful(expected, parse_context)
     } else {
       let error_msg = format!("Expected '{}', but got something else", expected);
       let length = input.len().min(expected_chars.len());
-      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(context.clone(), length, error_msg))
+      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, length, error_msg))
     }
   }
 }
 
 // Parser that matches any character
 pub fn any_char<'a>() -> impl Parser<'a, char, char> {
-  move |context: ParseContext<'a, char>| {
-    let input = context.input();
+  move |mut parser_context: ParseContext<'a, char>| {
+    let input = parser_context.input();
     if let Some(&c) = input.get(0) {
-      let new_context = context.next();
-      ParseResult::successful(c, new_context)
+      parser_context.next_mut();
+      ParseResult::successful(c, parser_context)
     } else {
       ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
-        context.clone(),
+        parser_context,
         0,
         "Input is empty".to_string(),
       ))
@@ -74,7 +74,7 @@ mod tests {
     match string("hello").parse(context) {
       ParseResult::Success {
         value,
-        context: new_context,
+        parser_context: new_context,
       } => {
         assert_eq!(value, "hello");
         assert_eq!(new_context.offset(), 5);
@@ -102,7 +102,7 @@ mod tests {
     match any_char().parse(context) {
       ParseResult::Success {
         value,
-        context: new_context,
+        parser_context: new_context,
       } => {
         assert_eq!(value, 'a');
         assert_eq!(new_context.offset(), 1);
@@ -120,7 +120,7 @@ mod tests {
     match one_of(digits).parse(context) {
       ParseResult::Success {
         value,
-        context: new_context,
+        parser_context: new_context,
       } => {
         assert_eq!(value, '5');
         assert_eq!(new_context.offset(), 1);

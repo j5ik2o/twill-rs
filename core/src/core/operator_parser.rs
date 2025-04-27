@@ -2,11 +2,11 @@ use crate::core::committed_status::CommittedStatus;
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::Parser;
-use crate::core::parser_ext::ParserExt;
+use crate::core::parser_monad::ParserMonad;
 use crate::core::ParseError;
 
 /// Trait providing parser operators
-pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> + Sized {
+pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized {
   /// Apply parsers selectively (disjunction) with lazy alternative evaluation
   fn or<P>(self, alt: P) -> impl Parser<'a, I, A>
   where
@@ -18,7 +18,7 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
   where
     F: FnOnce() -> P,
     P: Parser<'a, I, A>, {
-    move |input: ParseContext<'a, I>| match self.parse(input) {
+    move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
       pr@ParseResult::Failure {
         committed_status: CommittedStatus::Uncommitted,
         ..
@@ -47,9 +47,9 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
   fn not(self) -> impl Parser<'a, I, ()> {
-    move |context: ParseContext<'a, I>| match self.parse(context) {
-      ParseResult::Success { context, .. } => {
-        let parser_error = ParseError::of_mismatch(context, 0, "not predicate failed".to_string());
+    move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
+      ParseResult::Success { parser_context, .. } => {
+        let parser_error = ParseError::of_mismatch(parser_context, 0, "not predicate failed".to_string());
         ParseResult::failed_with_uncommitted(parser_error)
       }
       pr@ParseResult::Failure { .. } => ParseResult::successful((), pr.context().with_same_state()),
@@ -77,4 +77,4 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
 }
 
 /// Provide operator methods to all parsers
-impl<'a, T, I: 'a, A> OperatorParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserExt<'a, I, A> {}
+impl<'a, T, I: 'a, A> OperatorParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> {}

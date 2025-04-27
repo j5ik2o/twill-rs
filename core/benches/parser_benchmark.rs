@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::time::Duration;
-use twill_core::core::{OperatorParser, ParseContext, Parser, ParserExt};
+use twill_core::core::{OperatorParser, ParseContext, Parser, ParserMonad};
 use twill_core::examples::string_parser::string;
 
 // ユーティリティ関数 - ParseContextの作成

@@ -10,7 +10,7 @@ pub enum ParseResult<'a, I, A> {
     /// The value when success.
     value: A,
     /// The parsing context after successful parsing
-    context: ParseContext<'a, I>,
+    parser_context: ParseContext<'a, I>,
   },
   /// Failure.
   Failure {
@@ -27,7 +27,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   /// - value: a value
   /// - context: the parsing context after successful parsing
   pub fn successful(value: A, context: ParseContext<'a, I>) -> Self {
-    ParseResult::Success { value, context }
+    ParseResult::Success { value, parser_context: context }
   }
 
   /// Returns the parse result of failure.
@@ -59,14 +59,14 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn to_result(self) -> Result<(A, ParseContext<'a, I>), ParseError<'a, I>> {
     match self {
       ParseResult::Failure { error, .. } => Err(error),
-      ParseResult::Success { value, context } => Ok((value, context)),
+      ParseResult::Success { value, parser_context: context } => Ok((value, context)),
     }
   }
 
   pub fn context(&self) -> &ParseContext<'a, I> {
     match self {
       ParseResult::Failure { error, .. } => error.context(),
-      ParseResult::Success { context, .. } => context,
+      ParseResult::Success { parser_context: context, .. } => context,
     }
   }
 
@@ -82,7 +82,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn success(self) -> Option<(A, ParseContext<'a, I>)> {
     match self {
       ParseResult::Failure { .. } => None,
-      ParseResult::Success { value, context } => Some((value, context)),
+      ParseResult::Success { value, parser_context: context } => Some((value, context)),
     }
   }
 
@@ -146,7 +146,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   where
     F: Fn(A, ParseContext<'a, I>) -> ParseResult<'a, I, B>, {
     match self {
-      ParseResult::Success { value, context } => f(value, context),
+      ParseResult::Success { value, parser_context: context } => f(value, context),
       ParseResult::Failure {
         error: e,
         committed_status: c,

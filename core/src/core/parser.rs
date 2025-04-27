@@ -3,7 +3,7 @@ use crate::core::parse_result::ParseResult;
 
 /// Basic parser trait
 pub trait Parser<'a, I: 'a, A> {
-  fn parse(self, input: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
+  fn parse(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 }
 
 /// Treat closures as parsers
@@ -12,7 +12,7 @@ where
   F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A>,
   I: 'a,
 {
-  fn parse(self, input: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
-    self(input)
+  fn parse(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+    self(parse_context)
   }
 }
