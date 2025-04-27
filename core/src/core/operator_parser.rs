@@ -132,11 +132,11 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
             let op_result = op.clone().parse(ctx.with_same_state());
             if let ParseResult::Success { parse_context: op_ctx, value: operator, length: op_length } = op_result {
               // Parse the next value
-              let right_result = value_parser(op_ctx);
+              let right_result = value_parser(op_ctx.advance(op_length));
               if let ParseResult::Success { parse_context: new_ctx, value: right_value, length: right_length } = right_result {
                 // Apply the operator to update the result (FnOnce is applied directly)
                 left_value = operator(left_value, right_value);
-                ctx = new_ctx;
+                ctx = new_ctx.advance(right_length);
                 total_length += op_length + right_length;
                 continue;
               }
