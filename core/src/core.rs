@@ -7,7 +7,7 @@ pub mod parse_result;
 pub mod parser;
 pub mod parser_monad;
 
-pub use combinators::{empty, pure};
+pub use combinators::{empty, successful};
 pub use committed_status::CommittedStatus;
 pub use operator_parser::OperatorParser;
 pub use parse_context::ParseContext;

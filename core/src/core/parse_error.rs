@@ -146,7 +146,7 @@ impl<'a, I> ParseError<'a, I> {
     }
   }
 
-  pub fn context(&self) -> &ParseContext<'a, I> {
+  pub fn parse_context(&self) -> &ParseContext<'a, I> {
     match self {
       ParseError::Incomplete { parse_context: context } => context,
       ParseError::Mismatch { parse_context: context, .. } => context,

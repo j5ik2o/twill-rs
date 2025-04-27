@@ -7,10 +7,11 @@ use crate::core::parse_error::ParseError;
 pub enum ParseResult<'a, I, A> {
   /// Success.
   Success {
+    /// The parsing context after successful parsing
+    parse_context: ParseContext<'a, I>,
     /// The value when success.
     value: A,
-    /// The parsing context after successful parsing
-    parser_context: ParseContext<'a, I>,
+    length: usize,
   },
   /// Failure.
   Failure {
@@ -26,8 +27,8 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   ///
   /// - value: a value
   /// - context: the parsing context after successful parsing
-  pub fn successful(value: A, context: ParseContext<'a, I>) -> Self {
-    ParseResult::Success { value, parser_context: context }
+  pub fn successful(parse_context: ParseContext<'a, I>, value: A, length: usize) -> Self {
+    ParseResult::Success { parse_context, value, length  }
   }
 
   /// Returns the parse result of failure.
@@ -56,17 +57,17 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   }
 
   /// Convert [ParseResult] to [Result].
-  pub fn to_result(self) -> Result<(A, ParseContext<'a, I>), ParseError<'a, I>> {
+  pub fn to_result(self) -> Result<A, ParseError<'a, I>> {
     match self {
       ParseResult::Failure { error, .. } => Err(error),
-      ParseResult::Success { value, parser_context: context } => Ok((value, context)),
+      ParseResult::Success { value, ..} => Ok(value),
     }
   }
 
   pub fn context(&self) -> &ParseContext<'a, I> {
     match self {
-      ParseResult::Failure { error, .. } => error.context(),
-      ParseResult::Success { parser_context: context, .. } => context,
+      ParseResult::Failure { error, .. } => error.parse_context(),
+      ParseResult::Success { parse_context, .. } => parse_context,
     }
   }
 
@@ -82,7 +83,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn success(self) -> Option<(A, ParseContext<'a, I>)> {
     match self {
       ParseResult::Failure { .. } => None,
-      ParseResult::Success { value, parser_context: context } => Some((value, context)),
+      ParseResult::Success { parse_context, value, .. } => Some((value, parse_context)),
     }
   }
 
@@ -144,9 +145,9 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   /// Convert the result to another type (keeping the original failure when failed)
   pub fn flat_map<B, F>(self, f: F) -> ParseResult<'a, I, B>
   where
-    F: Fn(A, ParseContext<'a, I>) -> ParseResult<'a, I, B>, {
+    F: Fn(ParseContext<'a, I>, A, usize) -> ParseResult<'a, I, B>, {
     match self {
-      ParseResult::Success { value, parser_context: context } => f(value, context),
+      ParseResult::Success { parse_context, value, length } => f(parse_context, value, length),
       ParseResult::Failure {
         error: e,
         committed_status: c,
@@ -161,9 +162,9 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn map<B, F>(self, f: F) -> ParseResult<'a, I, B>
   where
     F: Fn(A) -> B, {
-    self.flat_map(|value, context| {
+    self.flat_map(|parse_context, value, length| {
       let new_value = f(value);
-      ParseResult::successful(new_value, context)
+      ParseResult::successful(parse_context, new_value, length)
     })
   }
 

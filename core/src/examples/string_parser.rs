@@ -7,7 +7,7 @@ pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str>
     let expected_chars: Vec<char> = expected.chars().collect();
     if input.len() >= expected_chars.len() && input[..expected_chars.len()] == expected_chars[..] {
       parse_context.advance_mut(expected_chars.len());
-      ParseResult::successful(expected, parse_context)
+      ParseResult::successful(parse_context, expected, expected_chars.len())
     } else {
       let error_msg = format!("Expected '{}', but got something else", expected);
       let length = input.len().min(expected_chars.len());
@@ -18,14 +18,14 @@ pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str>
 
 // Parser that matches any character
 pub fn any_char<'a>() -> impl Parser<'a, char, char> {
-  move |mut parser_context: ParseContext<'a, char>| {
-    let input = parser_context.input();
+  move |mut parse_context: ParseContext<'a, char>| {
+    let input = parse_context.input();
     if let Some(&c) = input.get(0) {
-      parser_context.next_mut();
-      ParseResult::successful(c, parser_context)
+      parse_context.next_mut();
+      ParseResult::successful(parse_context, c, 1)
     } else {
       ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
-        parser_context,
+        parse_context,
         0,
         "Input is empty".to_string(),
       ))
@@ -40,7 +40,7 @@ pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
     if let Some(&c) = input.get(0) {
       if chars.contains(&c) {
         let new_context = context.next();
-        ParseResult::successful(c, new_context)
+        ParseResult::successful(new_context, c, 1)
       } else {
         let error_msg = format!("Expected one of {:?}, but got '{}'", chars, c);
         ParseResult::failed_with_uncommitted(ParseError::of_mismatch(context.clone(), 1, error_msg))
@@ -73,8 +73,9 @@ mod tests {
     let context = create_context("hello world");
     match string("hello").parse(context) {
       ParseResult::Success {
+        parse_context: new_context,
         value,
-        parser_context: new_context,
+        ..
       } => {
         assert_eq!(value, "hello");
         assert_eq!(new_context.offset(), 5);
@@ -101,8 +102,9 @@ mod tests {
     let context = create_context("abc");
     match any_char().parse(context) {
       ParseResult::Success {
+        parse_context: new_context,
         value,
-        parser_context: new_context,
+        ..
       } => {
         assert_eq!(value, 'a');
         assert_eq!(new_context.offset(), 1);
@@ -119,8 +121,9 @@ mod tests {
     let context = create_context("5abc");
     match one_of(digits).parse(context) {
       ParseResult::Success {
+        parse_context: new_context,
         value,
-        parser_context: new_context,
+        ..
       } => {
         assert_eq!(value, '5');
         assert_eq!(new_context.offset(), 1);
