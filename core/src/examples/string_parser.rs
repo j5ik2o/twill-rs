@@ -69,11 +69,9 @@ mod tests {
 
   #[test]
   fn test_string_parser() {
-    let hello = string("hello");
-
     // Success case
     let context = create_context("hello world");
-    match hello.parse(&context) {
+    match string("hello").parse(&context) {
       ParseResult::Success {
         value,
         context: new_context,
@@ -86,7 +84,7 @@ mod tests {
 
     // Failure case
     let context = create_context("goodbye");
-    match hello.parse(&context) {
+    match string("hello").parse(&context) {
       ParseResult::Failure { committed_status, .. } => {
         assert_eq!(
           committed_status,
@@ -100,10 +98,8 @@ mod tests {
 
   #[test]
   fn test_any_char() {
-    let p = any_char();
-
     let context = create_context("abc");
-    match p.parse(&context) {
+    match any_char().parse(&context) {
       ParseResult::Success {
         value,
         context: new_context,
@@ -117,11 +113,11 @@ mod tests {
 
   #[test]
   fn test_one_of() {
-    let digits = one_of(&['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+    let digits = &['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
     // Success case
     let context = create_context("5abc");
-    match digits.parse(&context) {
+    match one_of(digits).parse(&context) {
       ParseResult::Success {
         value,
         context: new_context,
@@ -134,7 +130,7 @@ mod tests {
 
     // Failure case
     let context = create_context("abc");
-    match digits.parse(&context) {
+    match one_of(digits).parse(&context) {
       ParseResult::Failure { .. } => {}
       _ => panic!("one_of parser should fail on invalid input"),
     }

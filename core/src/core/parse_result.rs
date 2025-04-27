@@ -154,7 +154,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn map<B, F>(self, f: F) -> ParseResult<'a, I, B>
   where
     F: Fn(A) -> B, {
-    self.flat_map(|value, context| {
+    self.flat_map(|value,  context| {
       let new_value = f(value);
       ParseResult::successful(new_value, context)
     })
