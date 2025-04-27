@@ -28,7 +28,11 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   /// - value: a value
   /// - context: the parsing context after successful parsing
   pub fn successful(parse_context: ParseContext<'a, I>, value: A, length: usize) -> Self {
-    ParseResult::Success { parse_context, value, length  }
+    ParseResult::Success {
+      parse_context,
+      value,
+      length,
+    }
   }
 
   /// Returns the parse result of failure.
@@ -60,7 +64,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn to_result(self) -> Result<A, ParseError<'a, I>> {
     match self {
       ParseResult::Failure { error, .. } => Err(error),
-      ParseResult::Success { value, ..} => Ok(value),
+      ParseResult::Success { value, .. } => Ok(value),
     }
   }
 
@@ -83,7 +87,9 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn success(self) -> Option<(A, ParseContext<'a, I>)> {
     match self {
       ParseResult::Failure { .. } => None,
-      ParseResult::Success { parse_context, value, .. } => Some((value, parse_context)),
+      ParseResult::Success {
+        parse_context, value, ..
+      } => Some((value, parse_context)),
     }
   }
 
@@ -147,7 +153,11 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   where
     F: Fn(ParseContext<'a, I>, A, usize) -> ParseResult<'a, I, B>, {
     match self {
-      ParseResult::Success { parse_context, value, length } => f(parse_context, value, length),
+      ParseResult::Success {
+        parse_context,
+        value,
+        length,
+      } => f(parse_context, value, length),
       ParseResult::Failure {
         error: e,
         committed_status: c,
@@ -183,15 +193,19 @@ impl<'a, I, A> ParseResult<'a, I, A> {
       _ => self,
     }
   }
-  
+
   pub fn with_add_length(self, n: usize) -> Self {
     match self {
-      ParseResult::Success { parse_context, value, length } => ParseResult::Success {
+      ParseResult::Success {
+        parse_context,
+        value,
+        length,
+      } => ParseResult::Success {
         parse_context,
         value,
         length: length + n,
       },
-      _ => self
+      _ => self,
     }
   }
 }

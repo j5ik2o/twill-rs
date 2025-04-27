@@ -9,7 +9,11 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   where
     F: FnOnce(A) -> B, {
     move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
-      ParseResult::Success { parse_context, value, length  } => ParseResult::successful(parse_context , f(value), length),
+      ParseResult::Success {
+        parse_context,
+        value,
+        length,
+      } => ParseResult::successful(parse_context, f(value), length),
       ParseResult::Failure {
         error,
         committed_status,
@@ -23,7 +27,9 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
     F: FnOnce(A) -> P,
     P: Parser<'a, I, B>, {
     move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
-      ParseResult::Success { parse_context, value, .. } => f(value).parse(parse_context),
+      ParseResult::Success {
+        parse_context, value, ..
+      } => f(value).parse(parse_context),
       ParseResult::Failure {
         error,
         committed_status,

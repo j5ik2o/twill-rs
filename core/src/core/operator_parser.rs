@@ -19,7 +19,7 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
     F: FnOnce() -> P,
     P: Parser<'a, I, A>, {
     move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
-      pr@ParseResult::Failure {
+      pr @ ParseResult::Failure {
         committed_status: CommittedStatus::Uncommitted,
         ..
       } => {
@@ -53,7 +53,7 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
         let parser_error = ParseError::of_mismatch(parse_context, len, "not predicate failed".to_string());
         ParseResult::failed_with_uncommitted(parser_error)
       }
-      pr@ParseResult::Failure { .. } => ParseResult::successful(pr.context().with_same_state(), (), 0),
+      pr @ ParseResult::Failure { .. } => ParseResult::successful(pr.context().with_same_state(), (), 0),
     }
   }
 
@@ -95,22 +95,39 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
   /// Transforms any failure into an uncommitted failure
   /// This allows the parser to be used in an or_with operation even if it would normally commit
   fn attempt(self) -> impl Parser<'a, I, A> {
-    move |parse_context: ParseContext<'a, I>| {
-      self.parse(parse_context).with_uncommitted()
-    }
+    move |parse_context: ParseContext<'a, I>| self.parse(parse_context).with_uncommitted()
+  }
+
+  fn scan_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
+  where
+    Self: Clone,
+    P2: Parser<'a, I, OP> + Clone,
+    OP: FnOnce(A, A) -> A + 'a,
+    A: Clone + std::fmt::Debug + 'a, {
+    self.clone().flat_map(move |x| self.rest_right1(op, x))
+  }
+
+  fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
+  where
+    Self: Clone,
+    P2: Parser<'a, I, OP> + Clone,
+    OP: FnOnce(A, A) -> A + 'a,
+    A: Clone + std::fmt::Debug + 'a, {
+    self.clone().flat_map(move |x| self.rest_left1(op, x))
   }
 
   fn rest_right1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
   where
-      Self: Clone,
-      P2: Parser<'a, I, OP> + Clone,
-      OP: FnOnce(A, A) -> A + 'a,
-      A: Clone + std::fmt::Debug + 'a, {
+    Self: Clone,
+    P2: Parser<'a, I, OP> + Clone,
+    OP: FnOnce(A, A) -> A + 'a,
+    A: Clone + std::fmt::Debug + 'a, {
     let default_value = x.clone();
     op.flat_map(move |f| {
       let default_value = x.clone();
       self.map(move |y| f(default_value, y))
-    }).or(move |pc: ParseContext<'a, I>| ParseResult::successful(pc, default_value.clone(), 0))
+    })
+    .or(move |pc: ParseContext<'a, I>| ParseResult::successful(pc, default_value.clone(), 0))
   }
 
   /// Left associative binary operator parsing with default value
@@ -120,34 +137,47 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
   /// the parsed values, or returns the default value if no operations can be applied.
   fn rest_left1<P2, OP>(self, op: P2, default_value: A) -> impl Parser<'a, I, A>
   where
-     Self: Clone,
-     P2: Parser<'a, I, OP> + Clone,
-     OP: FnOnce(A, A) -> A + 'a,
-     A: Clone + std::fmt::Debug + 'a,
-  {
+    Self: Clone,
+    P2: Parser<'a, I, OP> + Clone,
+    OP: FnOnce(A, A) -> A + 'a,
+    A: Clone + std::fmt::Debug + 'a, {
     // Wrap the original parser in a closure to avoid ownership issues
     let initial_parser = self;
     let value_parser = move |ctx: ParseContext<'a, I>| initial_parser.clone().parse(ctx);
-    
+
     move |parse_context: ParseContext<'a, I>| {
       // Parse the initial value
       let initial_result = value_parser(parse_context);
-      
+
       match initial_result {
         // If the initial value could not be parsed, return the default value
         ParseResult::Failure { error, .. } => {
           ParseResult::successful(error.parse_context().with_same_state(), default_value.clone(), 0)
-        },
+        }
         // If the initial value was parsed, repeatedly apply operators and next values
-        ParseResult::Success { parse_context: mut ctx, value: mut left_value, length: mut total_length } => {
+        ParseResult::Success {
+          parse_context: mut ctx,
+          value: mut left_value,
+          length: mut total_length,
+        } => {
           // Repeatedly parse the remaining operators and values
           loop {
             // Parse the operator
             let op_result = op.clone().parse(ctx.with_same_state());
-            if let ParseResult::Success { parse_context: op_ctx, value: operator, length: op_length } = op_result {
+            if let ParseResult::Success {
+              parse_context: op_ctx,
+              value: operator,
+              length: op_length,
+            } = op_result
+            {
               // Parse the next value
               let right_result = value_parser(op_ctx.advance(op_length));
-              if let ParseResult::Success { parse_context: new_ctx, value: right_value, length: right_length } = right_result {
+              if let ParseResult::Success {
+                parse_context: new_ctx,
+                value: right_value,
+                length: right_length,
+              } = right_result
+              {
                 // Apply the operator to update the result (FnOnce is applied directly)
                 left_value = operator(left_value, right_value);
                 ctx = new_ctx.advance(right_length);
@@ -158,14 +188,13 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
             // Break the loop if parsing fails
             break;
           }
-          
+
           // Return the result
           ParseResult::successful(ctx, left_value, total_length)
         }
       }
     }
   }
-
 }
 
 impl<'a, T, I: 'a, A> OperatorParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> {}

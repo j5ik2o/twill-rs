@@ -24,11 +24,7 @@ pub fn any_char<'a>() -> impl Parser<'a, char, char> {
       parse_context.next_mut();
       ParseResult::successful(parse_context, c, 1)
     } else {
-      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
-        parse_context,
-        0,
-        "Input is empty".to_string(),
-      ))
+      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, 0, "Input is empty".to_string()))
     }
   }
 }

@@ -1,18 +1,19 @@
-use crate::core::{CommittedStatus, ParseError};
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::Parser;
+use crate::core::{CommittedStatus, ParseError};
 
 /// Always successful parser
 pub fn successful<'a, I: 'a, A: Clone>(value: A, length: usize) -> impl Parser<'a, I, A> {
-  move |parse_context: ParseContext<'a, I>| {
-    ParseResult::successful(parse_context, value, length)
-  }
+  move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value, length)
 }
 
-pub fn failed<'a, I: 'a, A>(parse_error: ParseError<'a, I>, committed_status: CommittedStatus) -> impl Parser<'a, I, A> {
+pub fn failed<'a, I: 'a, A>(
+  parse_error: ParseError<'a, I>,
+  committed_status: CommittedStatus,
+) -> impl Parser<'a, I, A> {
   move |_| ParseResult::failed(parse_error, committed_status)
-} 
+}
 
 /// Do nothing parser - does not consume input and returns no value
 pub fn empty<'a, I: 'a>() -> impl Parser<'a, I, ()> {

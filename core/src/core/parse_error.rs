@@ -91,8 +91,16 @@ impl<'a, I> ParseError<'a, I> {
   pub fn input(&self) -> Option<&'a [I]> {
     match self {
       ParseError::Incomplete { .. } => None,
-      ParseError::Mismatch { parse_context: context, length, .. } => Some(context.slice_with_len(*length)),
-      ParseError::Conversion { parse_context: context, length, .. } => Some(context.slice_with_len(*length)),
+      ParseError::Mismatch {
+        parse_context: context,
+        length,
+        ..
+      } => Some(context.slice_with_len(*length)),
+      ParseError::Conversion {
+        parse_context: context,
+        length,
+        ..
+      } => Some(context.slice_with_len(*length)),
       ParseError::Expect { ref inner, .. } => inner.input(),
       ParseError::Custom {
         inner: Some(ref inner), ..
@@ -105,7 +113,7 @@ impl<'a, I> ParseError<'a, I> {
     match self {
       ParseError::Incomplete { .. } => None,
       ParseError::Mismatch { parse_context, .. } => Some(parse_context.offset()),
-      ParseError::Conversion { parse_context , .. } => Some(parse_context.offset()),
+      ParseError::Conversion { parse_context, .. } => Some(parse_context.offset()),
       ParseError::Expect { parse_context, .. } => Some(parse_context.offset()),
       ParseError::Custom { parse_context, .. } => Some(parse_context.offset()),
     }
@@ -149,18 +157,22 @@ impl<'a, I> ParseError<'a, I> {
   pub fn parse_context(&self) -> &ParseContext<'a, I> {
     match self {
       ParseError::Incomplete { parse_context: context } => context,
-      ParseError::Mismatch { parse_context: context, .. } => context,
-      ParseError::Conversion { parse_context: context, .. } => context,
-      ParseError::Expect { parse_context: context, .. } => context,
-      ParseError::Custom { parse_context: context, .. } => context,
+      ParseError::Mismatch {
+        parse_context: context, ..
+      } => context,
+      ParseError::Conversion {
+        parse_context: context, ..
+      } => context,
+      ParseError::Expect {
+        parse_context: context, ..
+      } => context,
+      ParseError::Custom {
+        parse_context: context, ..
+      } => context,
     }
   }
 
-  pub fn of_expect(
-    context: ParseContext<'a, I>,
-    inner: Box<ParseError<'a, I>>,
-    message: String,
-  ) -> Self {
+  pub fn of_expect(context: ParseContext<'a, I>, inner: Box<ParseError<'a, I>>, message: String) -> Self {
     ParseError::Expect {
       parse_context: context,
       inner,
@@ -168,11 +180,7 @@ impl<'a, I> ParseError<'a, I> {
     }
   }
 
-  pub fn of_custom(
-    context: ParseContext<'a, I>,
-    inner: Option<Box<ParseError<'a, I>>>,
-    message: String,
-  ) -> Self {
+  pub fn of_custom(context: ParseContext<'a, I>, inner: Option<Box<ParseError<'a, I>>>, message: String) -> Self {
     ParseError::Custom {
       parse_context: context,
       inner,
