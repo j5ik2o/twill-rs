@@ -2,7 +2,7 @@ use crate::core::{ParseContext, ParseError, ParseResult, Parser};
 
 // Parser that matches a specific string
 pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str> {
-  move |context: &ParseContext<'a, char>| {
+  move |context: ParseContext<'a, char>| {
     let input = context.input();
     let expected_chars: Vec<char> = expected.chars().collect();
     if input.len() >= expected_chars.len() && input[..expected_chars.len()] == expected_chars[..] {
@@ -18,7 +18,7 @@ pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str>
 
 // Parser that matches any character
 pub fn any_char<'a>() -> impl Parser<'a, char, char> {
-  move |context: &ParseContext<'a, char>| {
+  move |context: ParseContext<'a, char>| {
     let input = context.input();
     if let Some(&c) = input.get(0) {
       let new_context = context.next();
@@ -35,7 +35,7 @@ pub fn any_char<'a>() -> impl Parser<'a, char, char> {
 
 // Parser that matches one of the given characters
 pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
-  move |context: &ParseContext<'a, char>| {
+  move |context: ParseContext<'a, char>| {
     let input = context.input();
     if let Some(&c) = input.get(0) {
       if chars.contains(&c) {
@@ -71,7 +71,7 @@ mod tests {
   fn test_string_parser() {
     // Success case
     let context = create_context("hello world");
-    match string("hello").parse(&context) {
+    match string("hello").parse(context) {
       ParseResult::Success {
         value,
         context: new_context,
@@ -84,7 +84,7 @@ mod tests {
 
     // Failure case
     let context = create_context("goodbye");
-    match string("hello").parse(&context) {
+    match string("hello").parse(context) {
       ParseResult::Failure { committed_status, .. } => {
         assert_eq!(
           committed_status,
@@ -99,7 +99,7 @@ mod tests {
   #[test]
   fn test_any_char() {
     let context = create_context("abc");
-    match any_char().parse(&context) {
+    match any_char().parse(context) {
       ParseResult::Success {
         value,
         context: new_context,
@@ -117,7 +117,7 @@ mod tests {
 
     // Success case
     let context = create_context("5abc");
-    match one_of(digits).parse(&context) {
+    match one_of(digits).parse(context) {
       ParseResult::Success {
         value,
         context: new_context,
@@ -130,7 +130,7 @@ mod tests {
 
     // Failure case
     let context = create_context("abc");
-    match one_of(digits).parse(&context) {
+    match one_of(digits).parse(context) {
       ParseResult::Failure { .. } => {}
       _ => panic!("one_of parser should fail on invalid input"),
     }

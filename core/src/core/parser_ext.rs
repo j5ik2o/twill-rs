@@ -8,7 +8,7 @@ pub trait ParserExt<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     F: FnOnce(A) -> B, {
-    move |input: &ParseContext<'a, I>| match self.parse(input) {
+    move |input: ParseContext<'a, I>| match self.parse(input) {
       ParseResult::Success { value, context } => ParseResult::successful(f(value), context),
       ParseResult::Failure {
         error,
@@ -22,8 +22,8 @@ pub trait ParserExt<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   where
     F: FnOnce(A) -> P,
     P: Parser<'a, I, B>, {
-    move |input: &ParseContext<'a, I>| match self.parse(input) {
-      ParseResult::Success { value, context } => f(value).parse(&context),
+    move |input: ParseContext<'a, I>| match self.parse(input) {
+      ParseResult::Success { value, context } => f(value).parse(context),
       ParseResult::Failure {
         error,
         committed_status,

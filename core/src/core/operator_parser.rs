@@ -18,13 +18,13 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
   where
     F: FnOnce() -> P,
     P: Parser<'a, I, A>, {
-    move |input: &ParseContext<'a, I>| match self.parse(input) {
-      ParseResult::Failure {
+    move |input: ParseContext<'a, I>| match self.parse(input) {
+      pr@ParseResult::Failure {
         committed_status: CommittedStatus::Uncommitted,
         ..
       } => {
         let alt = f();
-        alt.parse(input)
+        alt.parse(pr.context().with_same_state())
       }
       other => other,
     }
@@ -47,12 +47,12 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserExt<'a, I, A> +
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
   fn not(self) -> impl Parser<'a, I, ()> {
-    move |input: &ParseContext<'a, I>| match self.parse(input) {
+    move |context: ParseContext<'a, I>| match self.parse(context) {
       ParseResult::Success { context, .. } => {
         let parser_error = ParseError::of_mismatch(context, 0, "not predicate failed".to_string());
         ParseResult::failed_with_uncommitted(parser_error)
       }
-      ParseResult::Failure { .. } => ParseResult::successful((), input.with_same_state()),
+      pr@ParseResult::Failure { .. } => ParseResult::successful((), pr.context().with_same_state()),
     }
   }
 
