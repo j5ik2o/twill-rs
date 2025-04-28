@@ -56,10 +56,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
           ParseResult::failed_with_uncommitted(error)
         }
       }
-      ParseResult::Failure {
-        error,
-        committed_status,
-      } => ParseResult::failed(error, committed_status),
+      failed => failed,
     }
   }
 }

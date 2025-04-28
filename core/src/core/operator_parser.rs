@@ -110,10 +110,10 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
   fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
     Self: Clone,
-    P2: Parser<'a, I, OP> + Clone,
+    P2: Parser<'a, I, OP> + Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
-    self.clone().flat_map(move |x| self.rest_left1(op, x))
+    self.clone().flat_map(move |x| self.rest_left1(move || op.clone(), x))
   }
 
   fn rest_right1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
@@ -135,10 +135,11 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
   /// This method takes an operator parser and a default value, and
   /// returns a parser that repeatedly applies the left associative operation on
   /// the parsed values, or returns the default value if no operations can be applied.
-  fn rest_left1<P2, OP>(self, op: P2, default_value: A) -> impl Parser<'a, I, A>
+  fn rest_left1<P2, OP, F>(self, op: F, default_value: A) -> impl Parser<'a, I, A>
   where
     Self: Clone,
-    P2: Parser<'a, I, OP> + Clone,
+    F: Fn() -> P2 + 'a,
+    P2: Parser<'a, I, OP>,
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
     // Wrap the original parser in a closure to avoid ownership issues
@@ -163,7 +164,7 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
           // Repeatedly parse the remaining operators and values
           loop {
             // Parse the operator
-            let op_result = op.clone().parse(ctx.with_same_state());
+            let op_result = op().parse(ctx.with_same_state());
             if let ParseResult::Success {
               parse_context: op_ctx,
               value: operator,
