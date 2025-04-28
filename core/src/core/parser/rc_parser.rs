@@ -1,5 +1,5 @@
-use std::rc::Rc;
 use std::marker::PhantomData;
+use std::rc::Rc;
 
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
@@ -8,8 +8,7 @@ use crate::core::parser::Parser;
 /// A wrapper that makes any parser cloneable using reference counting
 pub struct RcParser<'a, I: 'a, A, F>
 where
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
-{
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: Rc<F>,
   _phantom: PhantomData<(&'a I, A)>,
 }
@@ -28,10 +27,11 @@ where
 }
 
 /// Convert any parser to an RcParser
-pub fn to_rc_parser<'a, I: 'a, A: 'a, T>(parser: T) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+pub fn to_rc_parser<'a, I: 'a, A: 'a, T>(
+  parser: T,
+) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where
-  T: Parser<'a, I, A> + Clone + 'a,
-{
+  T: Parser<'a, I, A> + Clone + 'a, {
   // パーサーをクローンして保持
   struct ParserHolder<'a, I: 'a, A: 'a, T: Parser<'a, I, A> + Clone + 'a> {
     parser: T,
