@@ -1,25 +1,25 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::choice_parser::ChoiceParser;
-use crate::core::parser::rc_parser::to_rc_parser;
+use crate::core::parser::rc_parser::{to_rc_parser, to_single_use_rc_parser};
 use crate::core::parser::Parser;
 use crate::core::parser_monad::ParserMonad;
 
 /// Trait providing binary operator related parser operations
 pub trait BinaryOperatorParser<'a, I: 'a, A>:
-  Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Sized
+  Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Sized + Clone
 where
   Self: 'a, {
   /// Right associative binary operator parsing
   fn scan_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + Clone + 'a,
+    P2: Parser<'a, I, OP> + 'a, // Clone constraint removed
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-    Self: Clone, {
+    A: Clone + std::fmt::Debug + 'a, {
     // Using RcParser to avoid clone constraints
     let rc_parser = to_rc_parser(self);
-    let op_clone = op.clone();
+    // Using single-use RcParser for op which doesn't require Clone
+    let op_rc = to_single_use_rc_parser(op);
 
     move |parse_context: ParseContext<'a, I>| match rc_parser.clone().parse(parse_context) {
       ParseResult::Success {
@@ -27,7 +27,7 @@ where
         value,
         length: _,
       } => {
-        let next_parser = rc_parser.clone().rest_right1(op_clone, value);
+        let next_parser = rc_parser.clone().rest_right1(op_rc, value);
         next_parser.parse(parse_context)
       }
       parse_result @ ParseResult::Failure { .. } => parse_result,
@@ -37,10 +37,9 @@ where
   /// Left associative binary operator parsing
   fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + Clone + 'a,
+    P2: Parser<'a, I, OP> + Clone + 'a, // This needs Clone - it's used multiple times
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-    Self: Clone, {
+    A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
     let op_clone = op.clone();
 
@@ -50,8 +49,8 @@ where
         value,
         length: _,
       } => {
-        let op_clone_fn = move || op_clone.clone();
-        let next_parser = rc_parser.clone().rest_left1(op_clone_fn, value);
+        let op_fn = move || op_clone.clone();
+        let next_parser = rc_parser.clone().rest_left1(op_fn, value);
         next_parser.parse(parse_context)
       }
       parse_result @ ParseResult::Failure { .. } => parse_result,
@@ -61,12 +60,13 @@ where
   /// Right associative binary operator parsing helper
   fn rest_right1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + Clone + 'a,
+    P2: Parser<'a, I, OP> + 'a, // Clone constraint removed
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-    Self: Clone, {
+    A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
     let default_value = x.clone();
+
+    // Wrap op in to_single_use_rc_parser so it can be consumed without cloning
     let mapped = op.flat_map(move |f| {
       let default_value = x.clone();
       rc_parser.clone().map(move |y| f(default_value, y))
@@ -99,8 +99,7 @@ where
     F: Fn() -> P2 + 'a,
     P2: Parser<'a, I, OP>,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-    Self: Clone, {
+    A: Clone + std::fmt::Debug + 'a, {
     // Wrap the original parser in an RcParser to make it cloneable
     let rc_parser = to_rc_parser(self);
     let value_parser = move |ctx: ParseContext<'a, I>| rc_parser.clone().parse(ctx);
@@ -157,8 +156,8 @@ where
   }
 }
 
-/// Implement BinaryOperatorParser for all types that implement Parser, ParserMonad and ChoiceParser
+/// Implement BinaryOperatorParser for all types that implement Parser, ParserMonad, ChoiceParser and Clone
 impl<'a, T, I: 'a, A> BinaryOperatorParser<'a, I, A> for T where
-  T: Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + 'a
+  T: Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Clone + 'a
 {
 }
