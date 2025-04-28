@@ -1,13 +1,13 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::choice_parser::ChoiceParser;
-use crate::core::parser::rc_parser::{to_rc_parser, to_single_use_rc_parser};
+use crate::core::parser::rc_parser::{to_rc_parser};
 use crate::core::parser::Parser;
 use crate::core::parser_monad::ParserMonad;
 
 /// Trait providing binary operator related parser operations
 pub trait BinaryOperatorParser<'a, I: 'a, A>:
-  Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Sized + Clone
+  Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Sized
 where
   Self: 'a, {
   /// Right associative binary operator parsing
@@ -16,10 +16,8 @@ where
     P2: Parser<'a, I, OP> + 'a, // Clone constraint removed
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
-    // Using RcParser to avoid clone constraints
     let rc_parser = to_rc_parser(self);
-    // Using single-use RcParser for op which doesn't require Clone
-    let op_rc = to_single_use_rc_parser(op);
+    let op_rc = to_rc_parser(op);
 
     move |parse_context: ParseContext<'a, I>| match rc_parser.clone().parse(parse_context) {
       ParseResult::Success {
@@ -37,11 +35,11 @@ where
   /// Left associative binary operator parsing
   fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + Clone + 'a, // This needs Clone - it's used multiple times
+    P2: Parser<'a, I, OP> + 'a, // This needs Clone - it's used multiple times
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
-    let op_clone = op.clone();
+    let op_clone =  to_rc_parser(op);
 
     move |parse_context: ParseContext<'a, I>| match rc_parser.clone().parse(parse_context) {
       ParseResult::Success {
@@ -89,11 +87,11 @@ where
     }
   }
 
-  /// Left associative binary operator parsing helper with default value
+  /// Left associative binary operator parsing helper with the default value
   ///
-  /// This method takes an operator parser and a default value, and
+  /// This method takes an operator parser and a default value and
   /// returns a parser that repeatedly applies the left associative operation on
-  /// the parsed values, or returns the default value if no operations can be applied.
+  /// the parsed values or returns the default value if no operations can be applied.
   fn rest_left1<P2, OP, F>(self, op: F, default_value: A) -> impl Parser<'a, I, A>
   where
     F: Fn() -> P2 + 'a,
@@ -102,11 +100,10 @@ where
     A: Clone + std::fmt::Debug + 'a, {
     // Wrap the original parser in an RcParser to make it cloneable
     let rc_parser = to_rc_parser(self);
-    let value_parser = move |ctx: ParseContext<'a, I>| rc_parser.clone().parse(ctx);
 
     move |parse_context: ParseContext<'a, I>| {
       // Parse the initial value
-      let initial_result = value_parser(parse_context);
+      let initial_result = rc_parser.clone().parse(parse_context);
 
       match initial_result {
         // If the initial value could not be parsed, return the default value
@@ -130,7 +127,7 @@ where
             } = op_result
             {
               // Parse the next value
-              let right_result = value_parser(op_ctx.advance(op_length));
+              let right_result = rc_parser.clone().parse(op_ctx.advance(op_length));
               if let ParseResult::Success {
                 parse_context: new_ctx,
                 value: right_value,

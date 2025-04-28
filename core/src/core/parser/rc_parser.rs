@@ -26,44 +26,12 @@ where
   }
 }
 
-/// Convert any parser to an RcParser
-pub fn to_rc_parser<'a, I: 'a, A: 'a, T>(
-  parser: T,
-) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
-where
-  T: Parser<'a, I, A> + Clone + 'a, {
-  // パーサーをクローンして保持
-  struct ParserHolder<'a, I: 'a, A: 'a, T: Parser<'a, I, A> + Clone + 'a> {
-    parser: T,
-    _phantom: PhantomData<(&'a I, A)>,
-  }
-
-  impl<'a, I: 'a, A: 'a, T: Parser<'a, I, A> + Clone + 'a> Clone for ParserHolder<'a, I, A, T> {
-    fn clone(&self) -> Self {
-      Self {
-        parser: self.parser.clone(),
-        _phantom: PhantomData,
-      }
-    }
-  }
-
-  let holder = Rc::new(ParserHolder {
-    parser,
-    _phantom: PhantomData,
-  });
-
-  RcParser::new(move |ctx| {
-    let parser = holder.parser.clone();
-    parser.parse(ctx)
-  })
-}
-
 /// Convert any parser to an RcParser without requiring Clone
 ///
 /// This is useful for parsers that can only be used once.
 /// The returned RcParser can be cloned and used multiple times,
 /// but it will only successfully parse on the first use.
-pub fn to_single_use_rc_parser<'a, I: 'a, A: 'a, T>(
+pub fn to_rc_parser<'a, I: 'a, A: 'a, T>(
   parser: T,
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where
