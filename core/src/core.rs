@@ -6,6 +6,7 @@ pub mod parse_error;
 pub mod parse_result;
 pub mod parser;
 pub mod parser_monad;
+pub mod rc_parser;
 
 pub use combinators::{empty, successful};
 pub use committed_status::CommittedStatus;
@@ -15,3 +16,4 @@ pub use parse_error::ParseError;
 pub use parse_result::ParseResult;
 pub use parser::Parser;
 pub use parser_monad::ParserMonad;
+pub use rc_parser::{RcParser, to_rc_parser};

@@ -4,9 +4,12 @@ use crate::core::parse_result::ParseResult;
 use crate::core::parser::Parser;
 use crate::core::parser_monad::ParserMonad;
 use crate::core::ParseError;
+use crate::core::rc_parser::to_rc_parser;
 
 /// Trait providing parser operators
-pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized {
+pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized 
+where
+  Self: 'a, {
   /// Apply parsers selectively (disjunction) with lazy alternative evaluation
   fn or<P>(self, alt: P) -> impl Parser<'a, I, A>
   where
@@ -100,32 +103,57 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
 
   fn scan_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    Self: Clone,
-    P2: Parser<'a, I, OP> + Clone,
+    P2: Parser<'a, I, OP> + Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
-    self.clone().flat_map(move |x| self.rest_right1(op, x))
+    A: Clone + std::fmt::Debug + 'a,
+    Self: Clone, {
+    // ここでもRcParserを使用してクローン制約を回避
+    let rc_parser = to_rc_parser(self);
+    let op_clone = op.clone();
+    
+    move |parse_context: ParseContext<'a, I>| {
+      match rc_parser.clone().parse(parse_context) {
+        ParseResult::Success { parse_context, value, length: _ } => {
+          let next_parser = rc_parser.clone().rest_right1(op_clone, value);
+          next_parser.parse(parse_context)
+        }
+        parse_result @ ParseResult::Failure { .. } => parse_result,
+      }
+    }
   }
 
   fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    Self: Clone,
     P2: Parser<'a, I, OP> + Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
-    self.clone().flat_map(move |x| self.rest_left1(move || op.clone(), x))
+    A: Clone + std::fmt::Debug + 'a,
+    Self: Clone, {
+    let rc_parser = to_rc_parser(self);
+    let op_clone = op.clone();
+    
+    move |parse_context: ParseContext<'a, I>| {
+      match rc_parser.clone().parse(parse_context) {
+        ParseResult::Success { parse_context, value, length: _ } => {
+          let op_clone_fn = move || op_clone.clone();
+          let next_parser = rc_parser.clone().rest_left1(op_clone_fn, value);
+          next_parser.parse(parse_context)
+        }
+        parse_result @ ParseResult::Failure { .. } => parse_result,
+      }
+    }
   }
 
   fn rest_right1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
   where
-    Self: Clone,
-    P2: Parser<'a, I, OP> + Clone,
+    P2: Parser<'a, I, OP> + Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
+    A: Clone + std::fmt::Debug + 'a,
+    Self: Clone, {
+    let rc_parser = to_rc_parser(self);
     let default_value = x.clone();
     op.flat_map(move |f| {
       let default_value = x.clone();
-      self.map(move |y| f(default_value, y))
+      rc_parser.clone().map(move |y| f(default_value, y))
     })
     .or(move |pc: ParseContext<'a, I>| ParseResult::successful(pc, default_value.clone(), 0))
   }
@@ -137,14 +165,14 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
   /// the parsed values, or returns the default value if no operations can be applied.
   fn rest_left1<P2, OP, F>(self, op: F, default_value: A) -> impl Parser<'a, I, A>
   where
-    Self: Clone,
     F: Fn() -> P2 + 'a,
     P2: Parser<'a, I, OP>,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
-    // Wrap the original parser in a closure to avoid ownership issues
-    let initial_parser = self;
-    let value_parser = move |ctx: ParseContext<'a, I>| initial_parser.clone().parse(ctx);
+    A: Clone + std::fmt::Debug + 'a,
+    Self: Clone, {
+    // Wrap the original parser in an RcParser to make it cloneable
+    let rc_parser = to_rc_parser(self);
+    let value_parser = move |ctx: ParseContext<'a, I>| rc_parser.clone().parse(ctx);
 
     move |parse_context: ParseContext<'a, I>| {
       // Parse the initial value
@@ -198,4 +226,6 @@ pub trait OperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A>
   }
 }
 
-impl<'a, T, I: 'a, A> OperatorParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> {}
+impl<'a, T, I: 'a, A> OperatorParser<'a, I, A> for T 
+where 
+  T: Parser<'a, I, A> + ParserMonad<'a, I, A> + 'a {}

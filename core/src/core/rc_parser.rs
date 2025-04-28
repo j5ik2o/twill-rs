@@ -1,0 +1,80 @@
+use std::rc::Rc;
+use std::marker::PhantomData;
+
+use crate::core::parse_context::ParseContext;
+use crate::core::parse_result::ParseResult;
+use crate::core::parser::Parser;
+
+/// A wrapper that makes any parser cloneable using reference counting
+pub struct RcParser<'a, I: 'a, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
+  parser_fn: Rc<F>,
+  _phantom: PhantomData<(&'a I, A)>,
+}
+
+impl<'a, I: 'a, A, F> RcParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
+  /// Create a new RcParser by wrapping a parser function
+  pub fn new(f: F) -> Self {
+    Self {
+      parser_fn: Rc::new(f),
+      _phantom: PhantomData,
+    }
+  }
+}
+
+/// Convert any parser to an RcParser
+pub fn to_rc_parser<'a, I: 'a, A: 'a, T>(parser: T) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+where
+  T: Parser<'a, I, A> + Clone + 'a,
+{
+  // パーサーをクローンして保持
+  struct ParserHolder<'a, I: 'a, A: 'a, T: Parser<'a, I, A> + Clone + 'a> {
+    parser: T,
+    _phantom: PhantomData<(&'a I, A)>,
+  }
+
+  impl<'a, I: 'a, A: 'a, T: Parser<'a, I, A> + Clone + 'a> Clone for ParserHolder<'a, I, A, T> {
+    fn clone(&self) -> Self {
+      Self {
+        parser: self.parser.clone(),
+        _phantom: PhantomData,
+      }
+    }
+  }
+
+  let holder = Rc::new(ParserHolder {
+    parser,
+    _phantom: PhantomData,
+  });
+
+  RcParser::new(move |ctx| {
+    let parser = holder.parser.clone();
+    parser.parse(ctx)
+  })
+}
+
+impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
+  fn parse(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+    (self.parser_fn)(parse_context)
+  }
+}
+
+impl<'a, I: 'a, A, F> Clone for RcParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
+  fn clone(&self) -> Self {
+    Self {
+      parser_fn: Rc::clone(&self.parser_fn),
+      _phantom: PhantomData,
+    }
+  }
+}
