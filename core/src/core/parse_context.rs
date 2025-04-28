@@ -48,7 +48,7 @@ impl<'a, I> ParseContext<'a, I> {
     &self.input[self.offset..]
   }
 
-  /// Get a slice of specified length from current position
+  /// Get a slice of specified length from the current position
   pub fn slice_with_len(&self, n: usize) -> &'a [I] {
     &self.input[self.offset..self.offset + n]
   }
@@ -68,7 +68,7 @@ impl<'a, I> ParseContext<'a, I> {
     self.offset >= self.input.len()
   }
 
-  /// Get remaining input length
+  /// Get the remaining input length
   pub fn remaining(&self) -> usize {
     if self.offset < self.input.len() {
       self.input.len() - self.offset
@@ -78,6 +78,7 @@ impl<'a, I> ParseContext<'a, I> {
   }
 
   /// Create a new context with the same state (same input and offset)
+  #[inline]
   pub fn with_same_state(&self) -> Self {
     Self::new(self.input, self.offset)
   }
