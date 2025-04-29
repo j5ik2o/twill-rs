@@ -24,10 +24,7 @@ where
         parse_context,
         value,
         length: _,
-      } => {
-        let next_parser = rc_parser.rest_right1(op, value);
-        next_parser.parse(parse_context)
-      }
+      } => rc_parser.rest_right1(op, value).parse(parse_context),
       parse_result @ ParseResult::Failure { .. } => parse_result,
     }
   }
@@ -45,10 +42,7 @@ where
         parse_context,
         value,
         length: _,
-      } => {
-        let next_parser = rc_parser.rest_left1(op, value);
-        next_parser.parse(parse_context)
-      }
+      } => rc_parser.rest_left1(op, value).parse(parse_context),
       parse_result @ ParseResult::Failure { .. } => parse_result,
     }
   }
@@ -59,20 +53,13 @@ where
     P2: Parser<'a, I, OP> + 'a,
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
-    let default_value = x.clone();
-
-    // Wrap op in to_single_use_rc_parser so it can be consumed without cloning
-    let mapped = op.flat_map(move |f| {
-      let default_value = x.clone();
-      self.map(move |y| f(default_value, y))
-    });
-
     move |pc: ParseContext<'a, I>| {
+      let default_value = x.clone();
       let original_pc = pc.with_same_state();
-      let result = mapped.parse(pc);
+      let result = op.flat_map(move |f| self.map(move |y| f(default_value, y))).parse(pc);
       match result {
         ok @ ParseResult::Success { .. } => ok,
-        _ => ParseResult::successful(original_pc, default_value.clone(), 0),
+        _ => ParseResult::successful(original_pc, x, 0),
       }
     }
   }
