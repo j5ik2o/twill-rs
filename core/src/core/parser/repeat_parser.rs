@@ -28,10 +28,8 @@ where
 
   fn count<P2, B>(self, count: usize) -> impl Parser<'a, I, Vec<A>>
   where
-    P2: Parser<'a, I, B> + 'a,
-    A: Clone + Debug + 'a,
-    B: Clone + Debug + 'a, {
-    self.repeat_sep(count..=count, None as Option<P2>)
+    A: Clone + Debug + 'a, {
+    self.repeat_sep(count..=count, None as Option<Self>)
   }
 
   fn many0_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
