@@ -72,9 +72,7 @@ where
       let result = mapped.parse(pc);
       match result {
         ok @ ParseResult::Success { .. } => ok,
-        _ => {
-          ParseResult::successful(original_pc, default_value.clone(), 0)
-        }
+        _ => ParseResult::successful(original_pc, default_value.clone(), 0),
       }
     }
   }
@@ -89,9 +87,50 @@ where
     P2: Parser<'a, I, OP> + 'a,
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
-    let rc_parser = to_rc_parser(self);
-    let op_rc_parser = to_rc_parser(op);
-    rc_rest_left(rc_parser, op_rc_parser, x)
+    fn rest_left0<'a, I, A, OP>(
+      rc_parser: RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A>>,
+      op_rc_parser: RcParser<'a, I, OP, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, OP>>,
+      x: A,
+    ) -> impl Parser<'a, I, A>
+    where
+      OP: FnOnce(A, A) -> A + 'a,
+      A: Clone + std::fmt::Debug + 'a, {
+      let default_value = x.clone();
+      (move |parse_context: ParseContext<'a, I>| match op_rc_parser.clone().parse(parse_context) {
+        ParseResult::Success {
+          parse_context: mut pc1,
+          value: f,
+          length: n1,
+        } => {
+          pc1.advance_mut(n1);
+          (match rc_parser.clone().parse(pc1) {
+            ParseResult::Success {
+              parse_context: mut pc2,
+              value: y,
+              length: n2,
+            } => {
+              pc2.advance_mut(n2);
+              rest_left0(rc_parser, op_rc_parser, f(y, default_value.clone()))
+                .parse(pc2)
+                .with_add_length(n2)
+            }
+            ParseResult::Failure {
+              error,
+              committed_status,
+            } => ParseResult::failed(error, committed_status),
+          })
+          .with_committed_fallback(n1 != 0)
+          .with_add_length(n1)
+        }
+        ParseResult::Failure {
+          error,
+          committed_status,
+        } => ParseResult::failed(error, committed_status),
+      })
+      .or(successful(x.clone(), 0))
+    }
+
+    rest_left0(to_rc_parser(self), to_rc_parser(op), x)
   }
 }
 
@@ -99,48 +138,4 @@ where
 impl<'a, T, I: 'a, A> BinaryOperatorParser<'a, I, A> for T where
   T: Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Clone + 'a
 {
-}
-
-fn rc_rest_left<'a, I, A, OP>(
-  rc_parser: RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A>>,
-  op_rc_parser: RcParser<'a, I, OP, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, OP>>,
-  x: A,
-) -> impl Parser<'a, I, A>
-where
-  I: 'a,
-  OP: FnOnce(A, A) -> A + 'a,
-  A: Clone + std::fmt::Debug + 'a, {
-  let default_value = x.clone();
-  (move |parse_context: ParseContext<'a, I>| match op_rc_parser.clone().parse(parse_context) {
-    ParseResult::Success {
-      parse_context: mut pc1,
-      value: f,
-      length: n1,
-    } => {
-      pc1.advance_mut(n1);
-      (match rc_parser.clone().parse(pc1) {
-        ParseResult::Success {
-          parse_context: mut pc2,
-          value: y,
-          length: n2,
-        } => {
-          pc2.advance_mut(n2);
-          rc_rest_left(rc_parser, op_rc_parser, f(y, default_value.clone()))
-            .parse(pc2)
-            .with_add_length(n2)
-        }
-        ParseResult::Failure {
-          error,
-          committed_status,
-        } => ParseResult::failed(error, committed_status),
-      })
-      .with_committed_fallback(n1 != 0)
-      .with_add_length(n1)
-    }
-    ParseResult::Failure {
-      error,
-      committed_status,
-    } => ParseResult::failed(error, committed_status),
-  })
-  .or(successful(x.clone(), 0))
 }
