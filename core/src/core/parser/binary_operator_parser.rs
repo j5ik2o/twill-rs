@@ -68,16 +68,11 @@ where
     });
 
     move |pc: ParseContext<'a, I>| {
-      // コンテキストの元の状態を取得する
       let original_pc = pc.with_same_state();
-
-      // mappedにpcを使用
       let result = mapped.parse(pc);
-
       match result {
         ok @ ParseResult::Success { .. } => ok,
         _ => {
-          // 失敗した場合は元の状態のコンテキストを使用して成功を返す
           ParseResult::successful(original_pc, default_value.clone(), 0)
         }
       }
