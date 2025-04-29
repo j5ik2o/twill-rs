@@ -4,21 +4,19 @@ use crate::core::parser::choice_parser::ChoiceParser;
 use crate::core::parser::rc_parser::to_rc_parser;
 use crate::core::parser::Parser;
 use crate::core::parser_monad::ParserMonad;
-use crate::core::successful;
+use crate::core::{successful, RcParser};
 
 /// Trait providing binary operator related parser operations
 pub trait BinaryOperatorParser<'a, I: 'a, A>:
   Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Sized
 where
-  Self: 'a,
-{
+  Self: 'a, {
   /// Right associative binary operator parsing
   fn scan_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
     P2: Parser<'a, I, OP> + 'a, // Clone constraint removed
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-  {
+    A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
 
     move |parse_context: ParseContext<'a, I>| match rc_parser.clone().parse(parse_context) {
@@ -39,8 +37,7 @@ where
   where
     P2: Parser<'a, I, OP> + 'a, // This needs Clone - it's used multiple times
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-  {
+    A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
 
     move |parse_context: ParseContext<'a, I>| match rc_parser.clone().parse(parse_context) {
@@ -61,8 +58,7 @@ where
   where
     P2: Parser<'a, I, OP> + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-  {
+    A: Clone + std::fmt::Debug + 'a, {
     let default_value = x.clone();
 
     // Wrap op in to_single_use_rc_parser so it can be consumed without cloning
@@ -97,45 +93,10 @@ where
   where
     P2: Parser<'a, I, OP> + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a,
-  {
-    let default_value = x.clone();
+    A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
     let op_rc_parser = to_rc_parser(op);
-    (move |parse_context: ParseContext<'a, I>| {
-      match op_rc_parser.clone().parse(parse_context) {
-        ParseResult::Success {
-          parse_context: mut pc1,
-          value: f,
-          length: n1,
-        } => {
-          pc1.advance_mut(n1);
-          (match rc_parser.clone().parse(pc1) {
-            ParseResult::Success {
-              parse_context: mut pc2,
-              value: y,
-              length: n2,
-            } => {
-              pc2.advance_mut(n2);
-              rc_parser
-                .rest_left1(op_rc_parser, f(y, default_value.clone()))
-                .parse(pc2)
-                .with_add_length(n2)
-            }
-            ParseResult::Failure {
-              error,
-              committed_status,
-            } => ParseResult::failed(error, committed_status),
-          })
-          .with_committed_fallback(n1 != 0)
-          .with_add_length(n1)
-        }
-        ParseResult::Failure {
-          error,
-          committed_status,
-        } => ParseResult::failed(error, committed_status),
-      }
-    }).or(successful(x.clone(), 0))
+    rc_rest_left(rc_parser, op_rc_parser, x)
   }
 }
 
@@ -143,4 +104,48 @@ where
 impl<'a, T, I: 'a, A> BinaryOperatorParser<'a, I, A> for T where
   T: Parser<'a, I, A> + ParserMonad<'a, I, A> + ChoiceParser<'a, I, A> + Clone + 'a
 {
+}
+
+fn rc_rest_left<'a, I, A, OP>(
+  rc_parser: RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A>>,
+  op_rc_parser: RcParser<'a, I, OP, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, OP>>,
+  x: A,
+) -> impl Parser<'a, I, A>
+where
+  I: 'a,
+  OP: FnOnce(A, A) -> A + 'a,
+  A: Clone + std::fmt::Debug + 'a, {
+  let default_value = x.clone();
+  (move |parse_context: ParseContext<'a, I>| match op_rc_parser.clone().parse(parse_context) {
+    ParseResult::Success {
+      parse_context: mut pc1,
+      value: f,
+      length: n1,
+    } => {
+      pc1.advance_mut(n1);
+      (match rc_parser.clone().parse(pc1) {
+        ParseResult::Success {
+          parse_context: mut pc2,
+          value: y,
+          length: n2,
+        } => {
+          pc2.advance_mut(n2);
+          rc_rest_left(rc_parser, op_rc_parser, f(y, default_value.clone()))
+            .parse(pc2)
+            .with_add_length(n2)
+        }
+        ParseResult::Failure {
+          error,
+          committed_status,
+        } => ParseResult::failed(error, committed_status),
+      })
+      .with_committed_fallback(n1 != 0)
+      .with_add_length(n1)
+    }
+    ParseResult::Failure {
+      error,
+      committed_status,
+    } => ParseResult::failed(error, committed_status),
+  })
+  .or(successful(x.clone(), 0))
 }

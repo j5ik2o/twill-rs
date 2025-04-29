@@ -14,7 +14,7 @@ pub use parse_result::ParseResult;
 pub use parser::binary_operator_parser::BinaryOperatorParser;
 pub use parser::choice_parser::ChoiceParser;
 pub use parser::operator_parser::OperatorParser;
-pub use parser::rc_parser::{RcParser};
+pub use parser::rc_parser::RcParser;
 pub use parser::sequence_parser::SequenceParser;
 pub use parser::transform_parser::TransformParser;
 pub use parser::Parser;
