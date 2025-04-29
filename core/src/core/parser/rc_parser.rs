@@ -61,6 +61,14 @@ where
   })
 }
 
+pub fn to_rc_parser_opt<'a, I: 'a, A: 'a, T>(
+  parser_opt: Option<T>,
+) -> Option<RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>>
+where
+  T: Parser<'a, I, A> + 'a, {
+  parser_opt.map(to_rc_parser)
+}
+
 impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,

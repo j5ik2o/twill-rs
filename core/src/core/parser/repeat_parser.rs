@@ -1,4 +1,5 @@
 use crate::core::parser::rc_parser::to_rc_parser;
+use crate::core::parser::rc_parser::to_rc_parser_opt;
 use crate::core::util::{Bound, RangeArgument};
 use crate::core::{BinaryOperatorParser, ParseContext, ParseError, ParseResult, Parser};
 use std::fmt::Debug;
@@ -49,7 +50,7 @@ where
     self.repeat_sep(1.., Some(separator))
   }
 
-  fn repeat_sep<P2, B, R>(self, range: R, mut separator_opt: Option<P2>) -> impl Parser<'a, I, Vec<A>>
+  fn repeat_sep<P2, B, R>(self, range: R, separator_opt: Option<P2>) -> impl Parser<'a, I, Vec<A>>
   where
     R: RangeArgument<usize> + Debug + 'a,
     P2: Parser<'a, I, B> + 'a,
@@ -60,6 +61,8 @@ where
       let mut items = vec![];
 
       let rc_parser = to_rc_parser(self);
+      let sep_parser_opt = to_rc_parser_opt(separator_opt);
+
       if let ParseResult::Success {
         parse_context: pc1,
         value,
@@ -84,12 +87,12 @@ where
             _ => (),
           }
 
-          if let Some(separator) = separator_opt.take() {
+          if let Some(separator) = &sep_parser_opt {
             if let ParseResult::Success {
               parse_context: pc2,
               length,
               ..
-            } = separator.parse(current_pc)
+            } = separator.clone().parse(current_pc)
             {
               current_pc = pc2.advance(length);
               all_length += length;
