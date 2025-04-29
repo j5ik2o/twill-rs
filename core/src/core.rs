@@ -5,6 +5,7 @@ pub mod parse_error;
 pub mod parse_result;
 pub mod parser;
 pub mod parser_monad;
+pub mod util;
 
 pub use combinators::{empty, successful};
 pub use committed_status::CommittedStatus;

@@ -12,39 +12,23 @@ pub trait BinaryOperatorParser<'a, I: 'a, A>:
 where
   Self: 'a, {
   /// Right associative binary operator parsing
-  fn scan_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
+  fn chain_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + 'a, // Clone constraint removed
+    P2: Parser<'a, I, OP> + 'a,
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
-
-    move |parse_context: ParseContext<'a, I>| match rc_parser.clone().parse(parse_context) {
-      ParseResult::Success {
-        parse_context,
-        value,
-        length: _,
-      } => rc_parser.rest_right1(op, value).parse(parse_context),
-      parse_result @ ParseResult::Failure { .. } => parse_result,
-    }
+    rc_parser.clone().flat_map(move |x| rc_parser.rest_right1(op, x))
   }
 
   /// Left associative binary operator parsing
   fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + 'a, // This needs Clone - it's used multiple times
+    P2: Parser<'a, I, OP> + 'a,
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
     let rc_parser = to_rc_parser(self);
-
-    move |parse_context: ParseContext<'a, I>| match rc_parser.clone().parse(parse_context) {
-      ParseResult::Success {
-        parse_context,
-        value,
-        length: _,
-      } => rc_parser.rest_left1(op, value).parse(parse_context),
-      parse_result @ ParseResult::Failure { .. } => parse_result,
-    }
+    rc_parser.clone().flat_map(move |x| rc_parser.rest_left1(op, x))
   }
 
   /// Right associative binary operator parsing helper
@@ -53,15 +37,12 @@ where
     P2: Parser<'a, I, OP> + 'a,
     OP: FnOnce(A, A) -> A + 'a,
     A: Clone + std::fmt::Debug + 'a, {
-    move |pc: ParseContext<'a, I>| {
-      let default_value = x.clone();
-      let original_pc = pc.with_same_state();
-      let result = op.flat_map(move |f| self.map(move |y| f(default_value, y))).parse(pc);
-      match result {
-        ok @ ParseResult::Success { .. } => ok,
-        _ => ParseResult::successful(original_pc, x, 0),
-      }
-    }
+    let default_value = x.clone();
+    op.flat_map(move |f| {
+      let default_value = default_value.clone();
+      self.map(move |y| f(y, default_value))
+    })
+    .or(successful(x, 0))
   }
 
   /// Left associative binary operator parsing helper with the default value

@@ -3,12 +3,12 @@ use crate::core::parse_result::ParseResult;
 
 pub mod binary_operator_parser;
 pub mod choice_parser;
+pub mod collect_parser;
 pub mod operator_parser;
 pub mod rc_parser;
+pub mod repeat_parser;
 pub mod sequence_parser;
 pub mod transform_parser;
-pub mod collect_parser;
-mod repeat_parser;
 
 /// Basic parser trait
 pub trait Parser<'a, I: 'a, A> {
