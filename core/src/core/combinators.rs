@@ -49,3 +49,21 @@ pub fn failed<'a, I: 'a, A>(
 pub fn empty<'a, I: 'a>() -> impl Parser<'a, I, ()> {
   FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, (), 0))
 }
+
+pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> impl Parser<'a, I, &'a I>
+where
+  F: Fn(&'a I) -> bool + 'a,
+  I: PartialEq + 'a, {
+  FuncParser::new(move |parse_context: ParseContext<'a, I>| {
+    let input = parse_context.input();
+    if let Some(actual) = input.get(0) {
+      if f(actual) {
+        return ParseResult::successful(parse_context.with_same_state(), actual, 1);
+      }
+    }
+    let offset = parse_context.offset();
+    let msg = format!("offset: {}", offset);
+    let pe = ParseError::of_mismatch(parse_context.next(), 1, msg);
+    ParseResult::failed_with_uncommitted(pe)
+  })
+}
