@@ -1,0 +1,149 @@
+use crate::core::element::Element;
+use crate::core::parser::FuncParser;
+use crate::core::{ParseError, ParseResult, Parser};
+
+pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> {
+  FuncParser::new(move |parse_context| {
+    let input = parse_context.input();
+    if input.len() >= n {
+      let value = parse_context.slice_with_len(n);
+      ParseResult::successful(parse_context, value, n)
+    } else {
+      ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context))
+    }
+  })
+}
+
+pub fn take_while0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+where
+  F: Fn(&I) -> bool + 'a,
+  I: Element + 'a, {
+  FuncParser::new(move |parse_context| {
+    let input = parse_context.input();
+    let mut start: Option<usize> = None;
+    let mut len = 0;
+    let mut index = 0;
+    while let Some(c) = input.get(index) {
+      if f(c) {
+        if start.is_none() {
+          start = Some(index);
+        }
+        len += 1;
+      }
+      index += 1;
+    }
+    match start {
+      Some(s) => ParseResult::successful(parse_context, &input[s..s + len], len),
+      None => {
+        let value = parse_context.slice_with_len(0);
+        ParseResult::successful(parse_context, value, 0)
+      }
+    }
+  })
+}
+
+pub fn take_while1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+where
+  F: Fn(&I) -> bool + 'a,
+  I: Element + 'a, {
+  FuncParser::new(move |parse_context| {
+    let input = parse_context.input();
+    let mut start: Option<usize> = None;
+    let mut len = 0;
+    let mut index = 0;
+    while let Some(c) = input.get(index) {
+      if f(c) {
+        if start.is_none() {
+          start = Some(index);
+        }
+        len += 1;
+      }
+      index += 1;
+    }
+    match start {
+      Some(s) => ParseResult::successful(parse_context, &input[s..s + len], len),
+      None => ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context)),
+    }
+  })
+}
+
+pub fn take_while_n_m<'a, I, F>(n: usize, m: usize, f: F) -> impl Parser<'a, I, &'a [I]>
+where
+  F: Fn(&I) -> bool + 'a,
+  I: Element + 'a, {
+  FuncParser::new(move |parse_context| {
+    let input = parse_context.input();
+    let mut start: Option<usize> = None;
+    let mut len = 0;
+    let mut index = 0;
+    while let Some(c) = input.get(index) {
+      if f(c) {
+        if start.is_none() {
+          start = Some(index);
+        }
+        len += 1;
+      }
+      index += 1;
+    }
+    match start {
+      Some(s) => {
+        let str = &input[s..s + len];
+        if n <= str.len() && str.len() <= m {
+          ParseResult::successful(parse_context, str, len)
+        } else {
+          ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context))
+        }
+      }
+      None => ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context)),
+    }
+  })
+}
+
+pub fn take_till0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+where
+  F: Fn(&I) -> bool + 'a,
+  I: Element + 'a, {
+  FuncParser::new(move |parse_state| {
+    let input = parse_state.input();
+    let mut index = 0;
+    let mut b = false;
+    while let Some(c) = input.get(index) {
+      if f(c) {
+        b = true;
+        break;
+      }
+      index += 1;
+    }
+    if b {
+      let value = parse_state.slice_with_len(index + 1);
+      ParseResult::successful(parse_state, value, index + 1)
+    } else {
+      let input = parse_state.input();
+      ParseResult::successful(parse_state, input, input.len())
+    }
+  })
+}
+
+pub fn take_till1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+where
+  F: Fn(&I) -> bool + 'a,
+  I: Element + 'a, {
+  FuncParser::new(move |parse_context| {
+    let input = parse_context.input();
+    let mut index = 0;
+    let mut b = false;
+    while let Some(c) = input.get(index) {
+      if f(c) {
+        b = true;
+        break;
+      }
+      index += 1;
+    }
+    if b {
+      let value = parse_context.slice_with_len(index + 1);
+      ParseResult::successful(parse_context, value, index + 1)
+    } else {
+      ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context))
+    }
+  })
+}

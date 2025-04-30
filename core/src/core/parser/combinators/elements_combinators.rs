@@ -23,6 +23,18 @@ where
   })
 }
 
+pub fn elm_ref<'a, I>(element: I) -> impl Parser<'a, I, &'a I>
+where
+  I: PartialEq + 'a, {
+  elm_pred_ref(move |actual| *actual == element)
+}
+
+pub fn elm_any_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+where
+    I: Element + PartialEq + 'a, {
+  elm_pred_ref(|_| true)
+}
+
 pub fn elm_space_ref<'a, I>() -> impl Parser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {

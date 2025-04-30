@@ -1,6 +1,8 @@
-mod elements;
+mod elements_combinators;
+mod take_combinators;
 
-pub use elements::*;
+pub use elements_combinators::*;
+pub use take_combinators::*;
 
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
