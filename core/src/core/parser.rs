@@ -6,6 +6,7 @@ pub mod and_then_parser;
 pub mod attempt_parser;
 pub mod binary_operator_parser;
 pub mod collect_parser;
+pub mod combinators;
 pub mod operator_parser;
 pub mod or_parser;
 pub mod parser_monad;
@@ -16,10 +17,15 @@ pub mod transform_parser;
 
 /// Basic parser trait
 pub trait Parser<'a, I: 'a, A> {
-  fn parse(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
+  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
+
+  fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A> where Self: Sized {
+    let parse_context = ParseContext::new(input, 0);
+    self.run(parse_context)
+  }
 }
 
-pub struct FuncParser<'a, I: 'a, A, F>
+pub(crate) struct FuncParser<'a, I: 'a, A, F>
 where
   F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: F,
@@ -30,7 +36,7 @@ impl<'a, I: 'a, A, F> FuncParser<'a, I, A, F>
 where
   F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
-  pub fn new(parser_fn: F) -> Self {
+  pub(crate) fn new(parser_fn: F) -> Self {
     FuncParser {
       parser_fn,
       _phantom: PhantomData,
@@ -42,7 +48,7 @@ impl<'a, I, A, F> Parser<'a, I, A> for FuncParser<'a, I, A, F>
 where
   F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
-  fn parse(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
     (self.parser_fn)(parse_context)
   }
 }

@@ -65,14 +65,14 @@ where
       A: Clone + std::fmt::Debug + 'a, {
       let default_value = x.clone();
       FuncParser::new(
-        move |parse_context: ParseContext<'a, I>| match op_rc_parser.clone().parse(parse_context) {
+        move |parse_context: ParseContext<'a, I>| match op_rc_parser.clone().run(parse_context) {
           ParseResult::Success {
             parse_context: mut pc1,
             value: f,
             length: n1,
           } => {
             pc1.advance_mut(n1);
-            (match rc_parser.clone().parse(pc1) {
+            (match rc_parser.clone().run(pc1) {
               ParseResult::Success {
                 parse_context: mut pc2,
                 value: y,
@@ -80,7 +80,7 @@ where
               } => {
                 pc2.advance_mut(n2);
                 rest_left0(rc_parser, op_rc_parser, f(y, default_value.clone()))
-                  .parse(pc2)
+                  .run(pc2)
                   .with_add_length(n2)
               }
               ParseResult::Failure {

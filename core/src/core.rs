@@ -1,18 +1,18 @@
-pub mod combinators;
 pub mod committed_status;
+mod element;
 pub mod parse_context;
 pub mod parse_error;
 pub mod parse_result;
 pub mod parser;
 pub mod util;
 
-pub use combinators::{empty, successful};
 pub use committed_status::CommittedStatus;
 pub use parse_context::ParseContext;
 pub use parse_error::ParseError;
 pub use parse_result::ParseResult;
 pub use parser::and_then_parser::AndThenParser;
 pub use parser::binary_operator_parser::BinaryOperatorParser;
+pub use parser::combinators::{empty, successful};
 pub use parser::operator_parser::OperatorParser;
 pub use parser::or_parser::OrParser;
 pub use parser::parser_monad::ParserMonad;

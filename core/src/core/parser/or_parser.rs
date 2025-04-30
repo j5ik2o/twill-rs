@@ -20,13 +20,13 @@ where
     F: FnOnce() -> P + 'a,
     P: Parser<'a, I, A> + 'a, {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         pr @ ParseResult::Failure {
           committed_status: CommittedStatus::Uncommitted,
           ..
         } => {
           let alt = f();
-          alt.parse(pr.context().with_same_state())
+          alt.run(pr.context().with_same_state())
         }
         other => other,
       },

@@ -84,12 +84,12 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   }
 
   /// Return the results of a successful parsing.
-  pub fn success(self) -> Option<(A, ParseContext<'a, I>)> {
+  pub fn success(self) -> Option<A> {
     match self {
       ParseResult::Failure { .. } => None,
       ParseResult::Success {
-        parse_context, value, ..
-      } => Some((value, parse_context)),
+        value, ..
+      } => Some(value),
     }
   }
 

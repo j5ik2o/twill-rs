@@ -30,7 +30,7 @@ fn bench_basic_parsers(c: &mut Criterion) {
     group.bench_with_input(BenchmarkId::new("string_parser", input.len()), input, |b, input| {
       b.iter(|| {
         let ctx = create_context(input);
-        string("hello").parse(ctx)
+        string("hello").run(ctx)
       })
     });
   }
@@ -52,7 +52,7 @@ fn bench_parser_combinators(c: &mut Criterion) {
   group.bench_function("map", |b| {
     b.iter(|| {
       let ctx = create_context(input);
-      string("hello").map(|s| s.len()).parse(ctx)
+      string("hello").map(|s| s.len()).run(ctx)
     })
   });
 
@@ -61,7 +61,7 @@ fn bench_parser_combinators(c: &mut Criterion) {
     b.iter(|| {
       // 遅延評価による代替パーサー生成
       let ctx = create_context(input);
-      string("hello").or(string("world")).parse(ctx)
+      string("hello").or(string("world")).run(ctx)
     })
   });
 
@@ -69,7 +69,7 @@ fn bench_parser_combinators(c: &mut Criterion) {
   group.bench_function("and_then", |b| {
     b.iter(|| {
       let ctx = create_context(input);
-      string("hello").and_then(string(" world")).parse(ctx)
+      string("hello").and_then(string(" world")).run(ctx)
     })
   });
 
@@ -77,7 +77,7 @@ fn bench_parser_combinators(c: &mut Criterion) {
   group.bench_function("and_then_with", |b| {
     b.iter(|| {
       let ctx = create_context(input);
-      string("hello").and_then_with(|_| string(" world")).parse(ctx)
+      string("hello").and_then_with(|_| string(" world")).run(ctx)
     })
   });
 
@@ -102,7 +102,7 @@ fn bench_complex_parsers(c: &mut Criterion) {
         .map(|s| s.len())
         .map(|len| len * 2)
         .map(|n| n.to_string())
-        .parse(ctx)
+        .run(ctx)
     })
   });
 
@@ -110,7 +110,7 @@ fn bench_complex_parsers(c: &mut Criterion) {
   group.bench_function("recreated_parser", |b| {
     b.iter(|| {
       let ctx = create_context(input);
-      string("hello").parse(ctx)
+      string("hello").run(ctx)
     })
   });
 

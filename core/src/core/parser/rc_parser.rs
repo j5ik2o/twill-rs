@@ -47,7 +47,7 @@ where
     // borrow_mutを使用して可変参照を取得し、takeでOptionからパーサーを取り出す
     let parser_opt = parser_cell.borrow_mut().take();
     match parser_opt {
-      Some(p) => p.parse(ctx),
+      Some(p) => p.run(ctx),
       None => {
         // パーサーが既に消費されている場合はエラーを返す
         let error = ParseError::of_custom(
@@ -73,7 +73,7 @@ impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
-  fn parse(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
     (self.parser_fn)(parse_context)
   }
 }

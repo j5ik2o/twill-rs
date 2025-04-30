@@ -10,7 +10,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
     Self: 'a,
     F: FnOnce(A) -> B + 'a, {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success {
           parse_context,
           value,
@@ -31,10 +31,10 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
     F: FnOnce(A) -> P + 'a,
     P: Parser<'a, I, B> + 'a, {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success {
           parse_context, value, ..
-        } => f(value).parse(parse_context),
+        } => f(value).run(parse_context),
         ParseResult::Failure {
           error,
           committed_status,
@@ -49,7 +49,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
     Self: 'a,
     F: FnOnce(&A) -> bool + 'a, {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success {
           parse_context,
           value,

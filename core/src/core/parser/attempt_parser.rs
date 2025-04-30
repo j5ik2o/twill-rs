@@ -7,7 +7,7 @@ where
   /// Transforms any failure into an uncommitted failure
   /// This allows the parser to be used in an or_with operation even if it would normally commit
   fn attempt(self) -> impl Parser<'a, I, A> {
-    FuncParser::new(move |parse_context: ParseContext<'a, I>| self.parse(parse_context).with_uncommitted())
+    FuncParser::new(move |parse_context: ParseContext<'a, I>| self.run(parse_context).with_uncommitted())
   }
 }
 

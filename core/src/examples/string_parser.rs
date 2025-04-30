@@ -32,22 +32,18 @@ pub fn any_char<'a>() -> impl Parser<'a, char, char> {
 
 // Parser that matches one of the given characters
 pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
-  FuncParser::new(move |context: ParseContext<'a, char>| {
-    let input = context.input();
+  FuncParser::new(move |mut parse_context: ParseContext<'a, char>| {
+    let input = parse_context.input();
     if let Some(&c) = input.get(0) {
       if chars.contains(&c) {
-        let new_context = context.next();
-        ParseResult::successful(new_context, c, 1)
+        parse_context.next_mut();
+        ParseResult::successful(parse_context, c, 1)
       } else {
         let error_msg = format!("Expected one of {:?}, but got '{}'", chars, c);
-        ParseResult::failed_with_uncommitted(ParseError::of_mismatch(context.clone(), 1, error_msg))
+        ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, 1, error_msg))
       }
     } else {
-      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(
-        context.clone(),
-        0,
-        "Input is empty".to_string(),
-      ))
+      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, 0, "Input is empty".to_string()))
     }
   })
 }
@@ -68,7 +64,7 @@ mod tests {
   fn test_string_parser() {
     // Success case
     let context = create_context("hello world");
-    match string("hello").parse(context) {
+    match string("hello").run(context) {
       ParseResult::Success {
         parse_context: new_context,
         value,
@@ -82,7 +78,7 @@ mod tests {
 
     // Failure case
     let context = create_context("goodbye");
-    match string("hello").parse(context) {
+    match string("hello").run(context) {
       ParseResult::Failure { committed_status, .. } => {
         assert_eq!(
           committed_status,
@@ -97,7 +93,7 @@ mod tests {
   #[test]
   fn test_any_char() {
     let context = create_context("abc");
-    match any_char().parse(context) {
+    match any_char().run(context) {
       ParseResult::Success {
         parse_context: new_context,
         value,
@@ -116,7 +112,7 @@ mod tests {
 
     // Success case
     let context = create_context("5abc");
-    match one_of(digits).parse(context) {
+    match one_of(digits).run(context) {
       ParseResult::Success {
         parse_context: new_context,
         value,
@@ -130,7 +126,7 @@ mod tests {
 
     // Failure case
     let context = create_context("abc");
-    match one_of(digits).parse(context) {
+    match one_of(digits).run(context) {
       ParseResult::Failure { .. } => {}
       _ => panic!("one_of parser should fail on invalid input"),
     }

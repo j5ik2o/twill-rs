@@ -66,7 +66,7 @@ where
         parse_context: pc1,
         value,
         length,
-      } = rc_parser.clone().parse(pc.with_same_state())
+      } = rc_parser.clone().run(pc.with_same_state())
       {
         let mut current_pc = pc1.advance(length);
         items.push(value);
@@ -91,7 +91,7 @@ where
               parse_context: pc2,
               length,
               ..
-            } = separator.clone().parse(current_pc)
+            } = separator.clone().run(current_pc)
             {
               current_pc = pc2.advance(length);
               all_length += length;
@@ -104,7 +104,7 @@ where
             parse_context: pc2,
             value,
             length,
-          } = rc_parser.clone().parse(current_pc)
+          } = rc_parser.clone().run(current_pc)
           {
             current_pc = pc2.advance(length);
             all_length += length;

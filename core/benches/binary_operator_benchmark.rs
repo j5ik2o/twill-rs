@@ -53,7 +53,7 @@ fn bench_left_associative_parser(c: &mut Criterion) {
         let add_op = to_rc_parser(string("+").map(|_| |a: i32, b: i32| a + b));
 
         // 左結合演算子パーサー
-        digit.chain_left1(add_op).parse(ctx)
+        digit.chain_left1(add_op).run(ctx)
       })
     });
   }
