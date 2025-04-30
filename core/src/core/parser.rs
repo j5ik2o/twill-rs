@@ -9,6 +9,7 @@ pub mod rc_parser;
 pub mod repeat_parser;
 pub mod sequence_parser;
 pub mod transform_parser;
+pub mod skip_parser;
 
 /// Basic parser trait
 pub trait Parser<'a, I: 'a, A> {
