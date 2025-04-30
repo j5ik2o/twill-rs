@@ -57,8 +57,8 @@ pub fn unit<'a, I: 'a>() -> impl Parser<'a, I, ()> {
 
 pub fn lazy<'a, I: 'a, A, P, F>(f: F) -> impl Parser<'a, I, A>
 where
-  P: Parser<'a, I, A> + 'a,
   A: 'a,
+  P: Parser<'a, I, A> + 'a,
   F: FnOnce() -> P + 'a, {
   unit().flat_map(move |_| f())
 }

@@ -28,8 +28,8 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
-    F: FnOnce(A) -> P + 'a,
-    P: Parser<'a, I, B> + 'a, {
+    P: Parser<'a, I, B> + 'a,
+    F: FnOnce(A) -> P + 'a, {
     FuncParser::new(
       move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success {

@@ -17,8 +17,8 @@ where
   /// Apply parsers selectively (disjunction) with lazy alternative evaluation using a function
   fn or_with<F, P>(self, f: F) -> impl Parser<'a, I, A>
   where
-    F: FnOnce() -> P + 'a,
-    P: Parser<'a, I, A> + 'a, {
+    P: Parser<'a, I, A> + 'a,
+    F: FnOnce() -> P + 'a, {
     FuncParser::new(
       move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         pr @ ParseResult::Failure {

@@ -87,9 +87,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   pub fn success(self) -> Option<A> {
     match self {
       ParseResult::Failure { .. } => None,
-      ParseResult::Success {
-        value, ..
-      } => Some(value),
+      ParseResult::Success { value, .. } => Some(value),
     }
   }
 

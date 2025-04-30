@@ -14,9 +14,9 @@ where
   /// Right associative binary operator parsing
   fn chain_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + 'a,
+    A: Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
+    P2: Parser<'a, I, OP> + 'a, {
     let rc_parser = to_rc_parser(self);
     rc_parser.clone().flat_map(move |x| rc_parser.rest_right1(op, x))
   }
@@ -24,9 +24,9 @@ where
   /// Left associative binary operator parsing
   fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + 'a,
+    A: Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
+    P2: Parser<'a, I, OP> + 'a, {
     let rc_parser = to_rc_parser(self);
     rc_parser.clone().flat_map(move |x| rc_parser.rest_left1(op, x))
   }
@@ -34,9 +34,9 @@ where
   /// Right associative binary operator parsing helper
   fn rest_right1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + 'a,
+    A: Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
+    P2: Parser<'a, I, OP> + 'a, {
     let default_value = x.clone();
     op.flat_map(move |f| {
       let default_value = default_value.clone();
@@ -52,17 +52,17 @@ where
   /// the parsed values or returns the default value if no operations can be applied.
   fn rest_left1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
   where
-    P2: Parser<'a, I, OP> + 'a,
+    A: Clone + 'a,
     OP: FnOnce(A, A) -> A + 'a,
-    A: Clone + std::fmt::Debug + 'a, {
+    P2: Parser<'a, I, OP> + 'a, {
     fn rest_left0<'a, I, A, OP>(
       rc_parser: RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A>>,
       op_rc_parser: RcParser<'a, I, OP, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, OP>>,
       x: A,
     ) -> impl Parser<'a, I, A>
     where
-      OP: FnOnce(A, A) -> A + 'a,
-      A: Clone + std::fmt::Debug + 'a, {
+      A: Clone + 'a,
+      OP: FnOnce(A, A) -> A + 'a, {
       let default_value = x.clone();
       FuncParser::new(
         move |parse_context: ParseContext<'a, I>| match op_rc_parser.clone().run(parse_context) {

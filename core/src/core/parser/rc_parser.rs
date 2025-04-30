@@ -31,7 +31,7 @@ where
 /// This is useful for parsers that can only be used once.
 /// The returned RcParser can be cloned and used multiple times,
 /// but it will only successfully parse on the first use.
-pub fn to_rc_parser<'a, I: 'a, A: 'a, T>(
+pub fn to_rc_parser<'a, I: 'a, A, T>(
   parser: T,
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where

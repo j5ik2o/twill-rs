@@ -19,7 +19,9 @@ pub mod transform_parser;
 pub trait Parser<'a, I: 'a, A> {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
-  fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A> where Self: Sized {
+  fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A>
+  where
+    Self: Sized, {
     let parse_context = ParseContext::new(input, 0);
     self.run(parse_context)
   }

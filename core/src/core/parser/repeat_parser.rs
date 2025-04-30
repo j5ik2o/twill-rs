@@ -3,58 +3,54 @@ use crate::core::parser::rc_parser::to_rc_parser_opt;
 use crate::core::parser::FuncParser;
 use crate::core::util::{Bound, RangeArgument};
 use crate::core::{BinaryOperatorParser, ParseContext, ParseError, ParseResult, Parser};
-use std::fmt::Debug;
 
 pub trait RepeatParser<'a, I: 'a, A>: Parser<'a, I, A> + BinaryOperatorParser<'a, I, A> + Sized
 where
   Self: 'a, {
   fn repeat<R>(self, range: R) -> impl Parser<'a, I, Vec<A>>
   where
-    R: RangeArgument<usize> + Debug + 'a,
-    A: Clone + Debug + 'a, {
+    R: RangeArgument<usize> + 'a,
+    A: 'a, {
     self.repeat_sep(range, None as Option<Self>)
   }
 
   fn many0(self) -> impl Parser<'a, I, Vec<A>>
   where
-    A: Clone + Debug + 'a, {
+    A: 'a, {
     self.repeat_sep(0.., None as Option<Self>)
   }
 
   fn many1(self) -> impl Parser<'a, I, Vec<A>>
   where
-    A: Clone + Debug + 'a, {
+    A: 'a, {
     self.repeat_sep(1.., None as Option<Self>)
   }
 
   fn count(self, count: usize) -> impl Parser<'a, I, Vec<A>>
   where
-    A: Clone + Debug + 'a, {
+    A: 'a, {
     self.repeat_sep(count..=count, None as Option<Self>)
   }
 
   fn many0_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
   where
     P2: Parser<'a, I, B> + 'a,
-    A: Clone + Debug + 'a,
-    B: Clone + Debug + 'a, {
+    B: 'a, {
     self.repeat_sep(0.., Some(separator))
   }
 
   fn many1_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
   where
     P2: Parser<'a, I, B> + 'a,
-    A: Clone + Debug + 'a,
-    B: Clone + Debug + 'a, {
+    B: 'a, {
     self.repeat_sep(1.., Some(separator))
   }
 
   fn repeat_sep<P2, B, R>(self, range: R, separator_opt: Option<P2>) -> impl Parser<'a, I, Vec<A>>
   where
-    R: RangeArgument<usize> + Debug + 'a,
-    P2: Parser<'a, I, B> + 'a,
-    A: Clone + Debug + 'a,
-    B: Clone + Debug + 'a, {
+    R: RangeArgument<usize> + 'a,
+    B: 'a,
+    P2: Parser<'a, I, B> + 'a, {
     FuncParser::new(move |pc: ParseContext<'a, I>| {
       let mut all_length = 0;
       let mut items = vec![];

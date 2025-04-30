@@ -9,8 +9,8 @@ where
   fn and_then_with<F, P2, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
-    F: FnOnce(A) -> P2 + 'a,
-    P2: Parser<'a, I, B> + 'a, {
+    P2: Parser<'a, I, B> + 'a,
+    F: FnOnce(A) -> P2 + 'a, {
     self.flat_map(f)
   }
 
@@ -18,8 +18,8 @@ where
   fn and_then<P2, B>(self, p2: P2) -> impl Parser<'a, I, (A, B)>
   where
     Self: 'a,
-    B: 'a,
     A: 'a,
+    B: 'a,
     P2: Parser<'a, I, B> + 'a, {
     self.and_then_with(move |a| p2.map(move |b| (a, b)))
   }
