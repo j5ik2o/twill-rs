@@ -1,5 +1,5 @@
 use crate::core::parser::FuncParser;
-use crate::core::{OrParser, ParseContext, Parser};
+use crate::core::{ParseContext, Parser};
 
 pub trait AttemptParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
 where
