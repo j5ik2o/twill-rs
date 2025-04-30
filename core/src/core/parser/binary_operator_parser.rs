@@ -1,9 +1,9 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::or_parser::OrParser;
+use crate::core::parser::parser_monad::ParserMonad;
 use crate::core::parser::rc_parser::to_rc_parser;
 use crate::core::parser::{FuncParser, Parser};
-use crate::core::parser::parser_monad::ParserMonad;
 use crate::core::{successful, RcParser};
 
 /// Trait providing binary operator related parser operations

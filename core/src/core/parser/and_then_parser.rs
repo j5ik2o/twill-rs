@@ -1,5 +1,5 @@
-use crate::core::parser::Parser;
 use crate::core::parser::parser_monad::ParserMonad;
+use crate::core::parser::Parser;
 
 /// Trait providing sequence-related parser operations
 pub trait AndThenParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized
