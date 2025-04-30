@@ -1,6 +1,8 @@
 use crate::core::parser::and_then_parser::AndThenParser;
 use crate::core::parser::attempt_parser::AttemptParser;
 use crate::core::parser::collect_parser::CollectParser;
+use crate::core::parser::logging_parser::LoggingParser;
+use crate::core::parser::offset_parser::OffsetParser;
 use crate::core::parser::or_parser::OrParser;
 use crate::core::parser::parser_monad::ParserMonad;
 use crate::core::parser::repeat_parser::RepeatParser;
@@ -23,6 +25,8 @@ pub trait OperatorParser<'a, I: 'a, A>:
   + TransformParser<'a, I, A>
   + CollectParser<'a, I, A>
   + BinaryOperatorParser<'a, I, A>
+  + LoggingParser<'a, I, A>
+  + OffsetParser<'a, I, A>
   + Sized
 where
   Self: 'a, {
@@ -40,6 +44,8 @@ impl<'a, T, I: 'a, A> OperatorParser<'a, I, A> for T where
     + TransformParser<'a, I, A>
     + CollectParser<'a, I, A>
     + BinaryOperatorParser<'a, I, A>
+    + LoggingParser<'a, I, A>
+    + OffsetParser<'a, I, A>
     + 'a
 {
 }

@@ -7,6 +7,8 @@ pub mod attempt_parser;
 pub mod binary_operator_parser;
 pub mod collect_parser;
 pub mod combinators;
+mod logging_parser;
+mod offset_parser;
 pub mod operator_parser;
 pub mod or_parser;
 pub mod parser_monad;
