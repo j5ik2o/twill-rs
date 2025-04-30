@@ -26,7 +26,7 @@ pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Par
   FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value, length))
 }
 
-pub fn unit<'a, I: 'a, A: 'a>() -> impl Parser<'a, I, ()> {
+pub fn unit<'a, I: 'a>() -> impl Parser<'a, I, ()> {
   successful((), 0)
 }
 
@@ -35,7 +35,7 @@ where
   P: Parser<'a, I, A> + 'a,
   A: 'a,
   F: FnOnce() -> P + 'a, {
-  unit::<I, ()>().flat_map(move |_| f())
+  unit().flat_map(move |_| f())
 }
 
 pub fn failed<'a, I: 'a, A>(
