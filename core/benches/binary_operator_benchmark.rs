@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::time::Duration;
 use twill_core::core::parser::rc_parser::to_rc_parser;
-use twill_core::core::{BinaryOperatorParser, ChoiceParser, ParseContext, Parser, ParserMonad};
+use twill_core::core::{BinaryOperatorParser, OrParser, ParseContext, Parser, ParserMonad};
 use twill_core::examples::string_parser::string;
 
 // ユーティリティ関数 - ParseContextの作成

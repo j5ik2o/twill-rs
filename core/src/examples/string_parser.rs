@@ -1,8 +1,9 @@
+use crate::core::parser::FuncParser;
 use crate::core::{ParseContext, ParseError, ParseResult, Parser};
 
 // Parser that matches a specific string
 pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str> {
-  move |mut parse_context: ParseContext<'a, char>| {
+  FuncParser::new(move |mut parse_context: ParseContext<'a, char>| {
     let input = parse_context.input();
     let expected_chars: Vec<char> = expected.chars().collect();
     if input.len() >= expected_chars.len() && input[..expected_chars.len()] == expected_chars[..] {
@@ -13,12 +14,12 @@ pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str>
       let length = input.len().min(expected_chars.len());
       ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, length, error_msg))
     }
-  }
+  })
 }
 
 // Parser that matches any character
 pub fn any_char<'a>() -> impl Parser<'a, char, char> {
-  move |mut parse_context: ParseContext<'a, char>| {
+  FuncParser::new(move |mut parse_context: ParseContext<'a, char>| {
     let input = parse_context.input();
     if let Some(&c) = input.get(0) {
       parse_context.next_mut();
@@ -26,12 +27,12 @@ pub fn any_char<'a>() -> impl Parser<'a, char, char> {
     } else {
       ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, 0, "Input is empty".to_string()))
     }
-  }
+  })
 }
 
 // Parser that matches one of the given characters
 pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
-  move |context: ParseContext<'a, char>| {
+  FuncParser::new(move |context: ParseContext<'a, char>| {
     let input = context.input();
     if let Some(&c) = input.get(0) {
       if chars.contains(&c) {
@@ -48,7 +49,7 @@ pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
         "Input is empty".to_string(),
       ))
     }
-  }
+  })
 }
 
 #[cfg(test)]

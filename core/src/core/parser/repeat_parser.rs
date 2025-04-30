@@ -1,5 +1,6 @@
 use crate::core::parser::rc_parser::to_rc_parser;
 use crate::core::parser::rc_parser::to_rc_parser_opt;
+use crate::core::parser::FuncParser;
 use crate::core::util::{Bound, RangeArgument};
 use crate::core::{BinaryOperatorParser, ParseContext, ParseError, ParseResult, Parser};
 use std::fmt::Debug;
@@ -26,7 +27,7 @@ where
     self.repeat_sep(1.., None as Option<Self>)
   }
 
-  fn count<P2, B>(self, count: usize) -> impl Parser<'a, I, Vec<A>>
+  fn count(self, count: usize) -> impl Parser<'a, I, Vec<A>>
   where
     A: Clone + Debug + 'a, {
     self.repeat_sep(count..=count, None as Option<Self>)
@@ -54,7 +55,7 @@ where
     P2: Parser<'a, I, B> + 'a,
     A: Clone + Debug + 'a,
     B: Clone + Debug + 'a, {
-    move |pc: ParseContext<'a, I>| {
+    FuncParser::new(move |pc: ParseContext<'a, I>| {
       let mut all_length = 0;
       let mut items = vec![];
 
@@ -127,6 +128,6 @@ where
       }
 
       ParseResult::successful(pc, items, all_length)
-    }
+    })
   }
 }

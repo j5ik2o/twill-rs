@@ -1,3 +1,4 @@
+use crate::core::parser::FuncParser;
 use crate::core::{ParseResult, Parser};
 
 pub trait CollectParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
@@ -6,7 +7,7 @@ where
   fn collect(self) -> impl Parser<'a, I, &'a [I]>
   where
     A: 'a, {
-    move |parse_context| match self.parse(parse_context) {
+    FuncParser::new(move |parse_context| match self.parse(parse_context) {
       ParseResult::Success {
         parse_context: pc1,
         length,
@@ -23,7 +24,7 @@ where
         error,
         committed_status,
       } => ParseResult::failed(error, committed_status),
-    }
+    })
   }
 }
 

@@ -1,6 +1,6 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
-use crate::core::parser::Parser;
+use crate::core::parser::{FuncParser, Parser};
 use crate::core::parser_monad::ParserMonad;
 use crate::core::ParseError;
 
@@ -15,14 +15,16 @@ where
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
   fn not(self) -> impl Parser<'a, I, ()> {
-    move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
-      ParseResult::Success { parse_context, .. } => {
-        let len = parse_context.last_offset().unwrap_or(0);
-        let parser_error = ParseError::of_mismatch(parse_context, len, "not predicate failed".to_string());
-        ParseResult::failed_with_uncommitted(parser_error)
-      }
-      pr @ ParseResult::Failure { .. } => ParseResult::successful(pr.context().with_same_state(), (), 0),
-    }
+    FuncParser::new(
+      move |parse_context: ParseContext<'a, I>| match self.parse(parse_context) {
+        ParseResult::Success { parse_context, .. } => {
+          let len = parse_context.last_offset().unwrap_or(0);
+          let parser_error = ParseError::of_mismatch(parse_context, len, "not predicate failed".to_string());
+          ParseResult::failed_with_uncommitted(parser_error)
+        }
+        pr @ ParseResult::Failure { .. } => ParseResult::successful(pr.context().with_same_state(), (), 0),
+      },
+    )
   }
 }
 
