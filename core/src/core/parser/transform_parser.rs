@@ -1,7 +1,7 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::{FuncParser, Parser};
-use crate::core::parser_monad::ParserMonad;
+use crate::core::parser::parser_monad::ParserMonad;
 use crate::core::ParseError;
 
 /// Trait providing result transformation operations for parsers

@@ -1,19 +1,18 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use std::marker::PhantomData;
-use std::ops::Mul;
-use std::rc::Rc;
 
 pub mod and_then_parser;
 pub mod attempt_parser;
 pub mod binary_operator_parser;
-pub mod choice_parser;
+pub mod or_parser;
 pub mod collect_parser;
 pub mod operator_parser;
 pub mod rc_parser;
 pub mod repeat_parser;
 pub mod skip_parser;
 pub mod transform_parser;
+pub mod parser_monad;
 
 /// Basic parser trait
 pub trait Parser<'a, I: 'a, A> {

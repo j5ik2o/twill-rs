@@ -1,5 +1,5 @@
 use crate::core::parser::{FuncParser, Parser};
-use crate::core::parser_monad::ParserMonad;
+use crate::core::parser::parser_monad::ParserMonad;
 use crate::core::{ParseContext, ParseResult};
 use std::ops::{Mul, Sub};
 
