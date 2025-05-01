@@ -2,6 +2,26 @@ use crate::core::element::Element;
 use crate::core::parser::FuncParser;
 use crate::core::{ParseError, ParseResult, Parser};
 
+/// Returns a [Parser] that returns an element of the specified length.
+///
+/// - n: Length of the reading element
+///
+/// # Example
+///
+/// ```rust
+/// # use twill_core::prelude::*;
+/// # use std::iter::FromIterator;
+///
+/// let text: &str = "abcdef";
+/// let input = text.chars().collect::<Vec<_>>();
+///
+/// let parser = take(3).map(String::from_iter);
+///
+/// let result = parser.parse(&input);
+///
+/// assert!(result.is_success());
+/// assert_eq!(result.success().unwrap(), "abc");
+/// ```
 pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> {
   FuncParser::new(move |parse_context| {
     let input = parse_context.input();
@@ -13,7 +33,29 @@ pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> {
     }
   })
 }
-
+/// Returns a [Parser] that returns elements, while the result of the closure is true.
+///
+/// The length of the analysis result is not required.
+///
+/// # Example
+///
+/// ```rust
+/// # use twill_core::prelude::*;
+/// # use std::iter::FromIterator;
+///
+/// let text: &str = "abcdef";
+/// let input = text.chars().collect::<Vec<_>>();
+///
+/// let parser = take_while0(|e| match *e {
+///  'a'..='c' => true,
+///   _ => false
+/// }).map(String::from_iter);
+///
+/// let result = parser.parse(&input);
+///
+/// assert!(result.is_success());
+/// assert_eq!(result.success().unwrap(), "abc");
+/// ```
 pub fn take_while0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
@@ -41,7 +83,29 @@ where
     }
   })
 }
-
+/// Returns a [Parser] that returns elements, while the result of the closure is true.
+///
+/// The length of the analysis result must be at least one element.
+///
+/// # Example
+///
+/// ```rust
+/// # use twill_core::prelude::*;
+/// # use std::iter::FromIterator;
+///
+/// let text: &str = "abcdef";
+/// let input = text.chars().collect::<Vec<_>>();
+///
+/// let parser = take_while1(|e| match *e {
+///  'a'..='c' => true,
+///   _ => false
+/// }).map(String::from_iter);
+///
+/// let result = parser.parse(&input);
+///
+/// assert!(result.is_success());
+/// assert_eq!(result.success().unwrap(), "abc");
+/// ```
 pub fn take_while1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
@@ -67,6 +131,29 @@ where
   })
 }
 
+/// Returns a [Parser] that returns elements, while the result of the closure is true.
+///
+/// The length of the analysis result should be between n and m elements.
+///
+/// # Example
+///
+/// ```rust
+/// # use twill_core::prelude::*;
+/// # use std::iter::FromIterator;
+///
+/// let text: &str = "abcdef";
+/// let input = text.chars().collect::<Vec<_>>();
+///
+/// let parser = take_while_n_m(1, 3, |e| match *e {
+///  'a'..='c' => true,
+///   _ => false
+/// }).map(String::from_iter);
+///
+/// let result = parser.parse(&input);
+///
+/// assert!(result.is_success());
+/// assert_eq!(result.success().unwrap(), "abc");
+/// ```
 pub fn take_while_n_m<'a, I, F>(n: usize, m: usize, f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
@@ -99,6 +186,26 @@ where
   })
 }
 
+/// Returns a [Parser] that returns a sequence up to either the end element or the element that matches the condition.
+///
+/// The length of the analysis result must be at least one element.
+///
+/// # Example
+///
+/// ```rust
+/// # use twill_core::prelude::*;
+/// # use std::iter::FromIterator;
+///
+/// let text: &str = "abcdef";
+/// let input = text.chars().collect::<Vec<_>>();
+///
+/// let parser = take_till0(|e| matches!(*e, 'c')).map(String::from_iter);
+///
+/// let result = parser.parse(&input);
+///
+/// assert!(result.is_success());
+/// assert_eq!(result.success().unwrap(), "abc");
+/// ```
 pub fn take_till0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
@@ -124,6 +231,26 @@ where
   })
 }
 
+/// Returns a [Parser] that returns a sequence up to either the end element or the element that matches the condition.
+///
+/// The length of the analysis result must be at least one element.
+///
+/// # Example
+///
+/// ```rust
+/// # use twill_core::prelude::*;
+/// # use std::iter::FromIterator;
+///
+/// let text: &str = "abcdef";
+/// let input = text.chars().collect::<Vec<_>>();
+///
+/// let parser = take_till1(|e| matches!(*e, 'c')).map(String::from_iter);
+///
+/// let result = parser.parse(&input);
+///
+/// assert!(result.is_success());
+/// assert_eq!(result.success().unwrap(), "abc");
+/// ```
 pub fn take_till1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,

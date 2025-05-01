@@ -1,6 +1,7 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::{FuncParser, Parser};
+use crate::core::successful;
 
 /// Trait providing parser transformation methods
 pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
@@ -8,21 +9,10 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
+    A: Clone + 'a,
     B: Clone + 'a,
     F: Fn(A) -> B + Clone + 'a, {
-    FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
-        ParseResult::Success {
-          parse_context,
-          value,
-          length,
-        } => ParseResult::successful(parse_context, f(value), length),
-        ParseResult::Failure {
-          error,
-          committed_status,
-        } => ParseResult::failed(error, committed_status),
-      },
-    )
+    self.flat_map(move |a| successful(f(a), 0))
   }
 
   /// Chain parsers
@@ -35,8 +25,8 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
     FuncParser::new(
       move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success {
-          parse_context, value, ..
-        } => f(value).run(parse_context),
+          parse_context, value, length,
+        } => f(value).run(parse_context.advance(length)),
         ParseResult::Failure {
           error,
           committed_status,
@@ -59,7 +49,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
           length,
         } => {
           if f(&value) {
-            ParseResult::successful(parse_context, value, length)
+            ParseResult::successful(parse_context.advance(length), value, length)
           } else {
             let message = "Filter condition not satisfied".to_string();
             let error =
