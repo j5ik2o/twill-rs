@@ -23,7 +23,7 @@ use crate::core::{FuncParser, ParseError, ParseResult, Parser};
 /// assert_eq!(result.success().unwrap(), "def");
 /// ```
 pub fn skip<'a, I: Clone + 'a>(n: usize) -> impl Parser<'a, I, ()> {
-  FuncParser::new(move |mut parse_context| {
+  FuncParser::new(move |parse_context| {
     let input = parse_context.input();
     if input.len() >= n {
       ParseResult::successful(parse_context, (), n)

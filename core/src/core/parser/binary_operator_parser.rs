@@ -4,6 +4,7 @@ use crate::core::parser::OrParser;
 use crate::core::parser::ParserMonad;
 use crate::core::parser::RcParser;
 use crate::core::parser::{FuncParser, Parser};
+use crate::core::ParseContext;
 use crate::prelude::successful;
 
 /// Trait providing binary operator related parser operations
@@ -48,63 +49,57 @@ where
   /// This method takes an operator parser and a default value and
   /// returns a parser that repeatedly applies the left associative operation on
   /// the parsed values or returns the default value if no operations can be applied.
-  fn rest_left1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A> + Clone
+  fn rest_left1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
   where
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + 'a, {
-    let self_clone = reusable_with_clone(self.clone());
-    let op_clone = reusable_with_clone(op.clone());
-
-    RcParser::new(move |pc| {
-      // 左結合で連続して式を解析する
-      let mut current_value = x.clone();
-      let mut current_pc = pc.with_same_state();
-      let mut total_length = 0;
-
-      // 繰り返し処理
-      loop {
-        let op_result = op_clone.clone().run(current_pc.with_same_state());
-
-        match op_result {
-          ParseResult::Success {
-            parse_context,
-            value: f,
-            length: op_length,
-          } => {
-            // 演算子の後には式が続くはず
-            let expr_result = self_clone.clone().run(parse_context);
-
-            match expr_result {
-              ParseResult::Success {
-                parse_context,
-                value: y,
-                length: expr_length,
-              } => {
-                // 結果を更新して次のループへ
-                current_value = f(current_value, y);
-                current_pc = parse_context;
-                total_length += op_length + expr_length;
-              }
-              ParseResult::Failure {
-                error,
-                committed_status,
-              } => {
-                // 式が見つからない場合は終了
-                return ParseResult::failed(error, committed_status);
-              }
+    fn rest_left0<'a, I, A, OP>(
+      rc_parser: RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A>>,
+      op_rc_parser: RcParser<'a, I, OP, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, OP>>,
+      x: A,
+    ) -> impl Parser<'a, I, A>
+    where
+      A: Clone + 'a,
+      OP: Fn(A, A) -> A + Clone + 'a, {
+      let default_value = x.clone();
+      FuncParser::new(move |parse_context| match op_rc_parser.clone().run(parse_context) {
+        ParseResult::Success {
+          parse_context: mut pc1,
+          value: f,
+          length: n1,
+        } => {
+          pc1.advance_mut(n1);
+          (match rc_parser.clone().run(pc1) {
+            ParseResult::Success {
+              parse_context: mut pc2,
+              value: y,
+              length: n2,
+            } => {
+              pc2.advance_mut(n2);
+              rest_left0(rc_parser.clone(), op_rc_parser.clone(), f(y, default_value.clone()))
+                .run(pc2)
+                .with_add_length(n2)
             }
-          }
-          ParseResult::Failure { .. } => {
-            // 演算子が見つからない場合はループを終了
-            break;
-          }
+            ParseResult::Failure {
+              error,
+              committed_status,
+            } => ParseResult::failed(error, committed_status),
+          })
+          .with_committed_fallback(n1 != 0)
+          .with_add_length(n1)
         }
-      }
+        ParseResult::Failure {
+          error,
+          committed_status,
+        } => ParseResult::failed(error, committed_status),
+      })
+      .or(successful(x.clone()))
+    }
 
-      // 最終結果を返す
-      ParseResult::successful(pc, current_value, total_length)
-    })
+    let parser_cloned = reusable_with_clone(self);
+    let op_cloned = reusable_with_clone(op);
+    rest_left0(parser_cloned, op_cloned, x)
   }
 }
 
