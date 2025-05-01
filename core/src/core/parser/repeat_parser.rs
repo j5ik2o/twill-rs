@@ -2,7 +2,7 @@ use crate::core::parser::rc_parser::to_rc_parser;
 use crate::core::parser::rc_parser::to_rc_parser_opt;
 use crate::core::parser::FuncParser;
 use crate::core::util::{Bound, RangeArgument};
-use crate::core::{BinaryOperatorParser, ParseContext, ParseError, ParseResult, Parser};
+use crate::core::{BinaryOperatorParser, ParseError, ParseResult, Parser, ParserMonad, TransformParser};
 
 pub trait RepeatParser<'a, I: 'a, A>: Parser<'a, I, A> + BinaryOperatorParser<'a, I, A> + Sized
 where
@@ -14,13 +14,13 @@ where
     self.repeat_sep(range, None as Option<Self>)
   }
 
-  fn many0(self) -> impl Parser<'a, I, Vec<A>>
+  fn of_many0(self) -> impl Parser<'a, I, Vec<A>>
   where
     A: 'a, {
     self.repeat_sep(0.., None as Option<Self>)
   }
 
-  fn many1(self) -> impl Parser<'a, I, Vec<A>>
+  fn of_many1(self) -> impl Parser<'a, I, Vec<A>>
   where
     A: 'a, {
     self.repeat_sep(1.., None as Option<Self>)
@@ -32,7 +32,7 @@ where
     self.repeat_sep(count..=count, None as Option<Self>)
   }
 
-  fn many0_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
+  fn of_many0_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
   where
     P2: Parser<'a, I, B> + 'a,
     A: 'a,
@@ -40,7 +40,7 @@ where
     self.repeat_sep(0.., Some(separator))
   }
 
-  fn many1_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
+  fn of_many1_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
   where
     P2: Parser<'a, I, B> + 'a,
     A: 'a,
@@ -66,22 +66,31 @@ where
         length,
       } = parser.clone().run(parse_context.with_same_state())
       {
+        println!("length:{}",length);
         let mut current_parse_state = pc1.advance(length);
         items.push(value);
         all_length += length;
         loop {
-          match range.end() {
+          let bBreak = match range.end() {
             Bound::Included(&max_count) => {
               if items.len() >= max_count {
-                break;
+                true
+              } else {
+                false
               }
             }
             Bound::Excluded(&max_count) => {
               if items.len() + 1 >= max_count {
-                break;
+                true
+              } else {
+                false
               }
             }
-            _ => (),
+            _ => false,
+          };
+println!("bBreak:{}",bBreak);
+          if bBreak {
+            break;
           }
 
           if let Some(sep) = &separator {
@@ -91,22 +100,27 @@ where
               ..
             } = sep.clone().run(current_parse_state)
             {
+              println!("sep: length:{}",length);
               current_parse_state = pc2.advance(length);
               all_length += length;
             } else {
+              println!("sep: failed");
               break;
             }
           }
+
           if let ParseResult::Success {
             parse_context: pc3,
             value,
             length,
           } = parser.clone().run(current_parse_state)
           {
+            println!("n: length:{}",length);
             current_parse_state = pc3.advance(length);
             items.push(value);
             all_length += length;
           } else {
+            println!("n: failed");
             break;
           }
         }
@@ -131,3 +145,5 @@ where
     })
   }
 }
+
+impl<'a, T, I: 'a, A> RepeatParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + 'a {}
