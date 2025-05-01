@@ -1,5 +1,4 @@
-use crate::core::parser::rc_parser::to_rc_parser;
-use crate::core::parser::rc_parser::to_rc_parser_opt;
+use crate::core::parser::rc_parser::{to_rc_parser, reusable_parser};
 use crate::core::parser::FuncParser;
 use crate::core::util::{Bound, RangeArgument};
 use crate::core::{BinaryOperatorParser, ParseError, ParseResult, Parser, ParserMonad, TransformParser};
@@ -54,8 +53,12 @@ where
     A: 'a,
     B: 'a,
     P2: Parser<'a, I, B> + 'a, {
-    let parser = to_rc_parser(self);
-    let separator = to_rc_parser_opt(separator_opt);
+    // 元のパーサーをto_rc_parser（シングルユースパーサー）としてラップ
+    let parser_single_use = to_rc_parser(self);
+    
+    // 同様にセパレーターもto_rc_parserでラップ
+    let separator_single_use = separator_opt.map(to_rc_parser);
+    
     FuncParser::new(move |parse_context| {
       let mut all_length = 0;
       let mut items = vec![];
@@ -64,7 +67,7 @@ where
         parse_context: pc1,
         value,
         length,
-      } = parser.clone().run(parse_context.with_same_state())
+      } = parser_single_use.clone().run(parse_context.with_same_state())
       {
         println!("length:{}",length);
         let mut current_parse_state = pc1.advance(length);
@@ -93,7 +96,7 @@ println!("bBreak:{}",bBreak);
             break;
           }
 
-          if let Some(sep) = &separator {
+          if let Some(sep) = &separator_single_use {
             if let ParseResult::Success {
               parse_context: pc2,
               length,
@@ -113,7 +116,7 @@ println!("bBreak:{}",bBreak);
             parse_context: pc3,
             value,
             length,
-          } = parser.clone().run(current_parse_state)
+          } = parser_single_use.clone().run(current_parse_state)
           {
             println!("n: length:{}",length);
             current_parse_state = pc3.advance(length);

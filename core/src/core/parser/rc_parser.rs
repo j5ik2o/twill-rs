@@ -28,9 +28,8 @@ where
 
 /// Convert any parser to an RcParser without requiring Clone
 ///
-/// This is useful for parsers that can only be used once.
-/// The returned RcParser can be cloned and used multiple times,
-/// but it will only successfully parse on the first use.
+/// This creates a reusable parser that can be cloned and used multiple times.
+/// The original parser is consumed only once on the first use.
 pub fn to_rc_parser<'a, I: 'a, A, T>(
   parser: T,
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
@@ -61,12 +60,48 @@ where
   })
 }
 
+/// Create a reusable RcParser from a parser factory function
+///
+/// This allows creating a parser that can be cloned and used multiple times,
+/// even though the underlying parser might not implement Clone.
+/// Each time the parser is run, the factory function is called to create a new parser instance.
+pub fn reusable_parser<'a, I: 'a, A, P, F>(
+  factory: F,
+) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+where
+  F: Fn() -> P + 'a,
+  P: Parser<'a, I, A>, {
+  
+  // factoryをRcでラップして共有
+  let factory_rc = Rc::new(factory);
+  
+  RcParser::new(move |ctx| {
+    // 毎回ファクトリを使って新しいパーサーインスタンスを生成
+    let parser = factory_rc();
+    parser.run(ctx)
+  })
+}
+
+/// Convert an optional parser to an optional RcParser without requiring Clone
 pub fn to_rc_parser_opt<'a, I: 'a, A: 'a, T>(
   parser_opt: Option<T>,
 ) -> Option<RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>>
 where
   T: Parser<'a, I, A> + 'a, {
   parser_opt.map(to_rc_parser)
+}
+
+/// Create an optional reusable RcParser from an optional parser factory function
+pub fn reusable_parser_opt<'a, I: 'a, A: 'a, P, F>(
+  factory_opt: Option<F>,
+) -> Option<RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>>
+where
+  F: Fn() -> P + 'a,
+  P: Parser<'a, I, A>, {
+  match factory_opt {
+    Some(f) => Some(reusable_parser(f)),
+    None => None,
+  }
 }
 
 impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>

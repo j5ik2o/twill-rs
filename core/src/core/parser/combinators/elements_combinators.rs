@@ -165,21 +165,23 @@ where
 mod tests{
   use crate::core::parser::combinators::{elm_ref, elm_ref_in};
   use crate::core::Parser;
-  use crate::core::parser::rc_parser::to_rc_parser;
+  use crate::core::parser::rc_parser::reusable_parser;
 
   #[test]
   fn test_elm_ref_in(){
     let text = "abc";
     let input = text.chars().collect::<Vec<_>>();
-    let p = to_rc_parser(elm_ref_in('a', 'c'));
+    // ファクトリー関数を使用してパーサーを生成
+    let char_range = ('a', 'c');
+    let p = reusable_parser(move || elm_ref_in(char_range.0, char_range.1));
 
     let result = p.clone().parse(&input[0..]);
     assert!(result.is_success());
     println!("{:?}", result.success());
 
     let result = p.clone().parse(&input[1..]);
-    println!("{:?}",result.clone().failure().unwrap());
     assert!(result.is_success());
+    println!("{:?}", result.success());
   }
 
 }
