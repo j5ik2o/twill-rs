@@ -1,4 +1,3 @@
-use crate::core::parser::collect_parser::CollectParser;
 use crate::core::parser::parser_monad::ParserMonad;
 use crate::core::parser::{FuncParser, Parser};
 use crate::core::{ParseContext, ParseResult};

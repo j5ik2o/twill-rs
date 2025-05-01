@@ -55,7 +55,7 @@ pub fn reusable_with_clone<'a, I: 'a, A, P>(
   parser: P,
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where
-  P: Parser<'a, I, A> + Clone + 'a, {
+  P: Parser<'a, I, A> {
   // クローン可能なパーサーを利用
   let parser_clone = parser;
 

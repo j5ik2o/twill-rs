@@ -1,6 +1,6 @@
 use crate::core::committed_status::CommittedStatus;
 use crate::core::parser::collect_parser::CollectParser;
-use crate::core::parser::rc_parser::reusable_with_clone;
+use crate::core::parser::rc_parser::{reusable_parser, reusable_parser_opt, reusable_with_clone};
 use crate::core::parser::FuncParser;
 use crate::core::util::{Bound, RangeArgument};
 use crate::core::{BinaryOperatorParser, ParseError, ParseResult, Parser, ParserMonad};
@@ -76,10 +76,15 @@ where
     A: Clone + 'a,
     B: Clone + 'a,
     P2: Parser<'a, I, B> + 'a, {
-    // パーサーはClone可能なので、rc_parserモジュールのreusable_with_cloneを使用
-    // to_rc_parserは使い捨てパーサーで利用しにくいため廃止
-    let main_parser = reusable_with_clone(self);
-    let separator = separator_opt.map(reusable_with_clone);
+    let parser_clone = self.clone();
+    let main_parser_factory = move || parser_clone.clone();
+    let main_parser = reusable_parser(main_parser_factory);
+
+    let separator = separator_opt.map(|sep| {
+      let sep_clone = sep.clone();
+      reusable_parser(move || sep_clone.clone())
+    });
+    
     let range_capture = range;
 
     FuncParser::new(move |parse_context| {
@@ -207,21 +212,7 @@ mod tests {
   use super::*;
   use crate::core::parse_context::ParseContext;
   use crate::core::parse_result::ParseResult;
-  use crate::core::parser::rc_parser::RcParser;
-
-  // 単純なクローン可能なパーサーを作成
-  fn char_parser<'a>(c: char) -> impl Parser<'a, char, char> + Clone {
-    // RcParserを直接使う（これはクローン可能）
-    RcParser::new(move |parse_context: ParseContext<'a, char>| {
-      let input = parse_context.input();
-      if let Some(&actual) = input.get(0) {
-        if actual == c {
-          return ParseResult::successful(parse_context.with_same_state(), actual, 1);
-        }
-      }
-      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, 0, format!("Expected {}", c)))
-    })
-  }
+  use crate::core::parser::combinators::elm_ref;
 
   #[test]
   fn test_basic_repeat() {
@@ -230,7 +221,7 @@ mod tests {
     let input: Vec<char> = text.chars().collect();
 
     // 文字「a」を認識するクローン可能なパーサー
-    let a_parser = char_parser('a');
+    let a_parser = elm_ref('a');
 
     // 0回以上の繰り返し
     let many_a = a_parser.of_many0();
@@ -255,8 +246,8 @@ mod tests {
     let input: Vec<char> = text.chars().collect();
 
     // 文字認識用パーサー - クローン可能なものを使用
-    let a_parser = char_parser('a');
-    let comma_parser = char_parser(',');
+    let a_parser = elm_ref('a');
+    let comma_parser = elm_ref(',');
 
     // カンマ区切りのリスト
     let a_comma_list = a_parser.of_many1_sep(comma_parser);
@@ -281,7 +272,7 @@ mod tests {
     let input: Vec<char> = text.chars().collect();
 
     // 文字「a」を認識するクローン可能なパーサー
-    let a_parser = char_parser('a');
+    let a_parser = elm_ref('a');
 
     // ちょうど3回の繰り返し
     let exactly_three_a = a_parser.count(3);

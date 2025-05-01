@@ -10,27 +10,34 @@ use crate::core::parser::parser_monad::ParserMonad;
 use crate::core::parser::{FuncParser, Parser};
 use crate::core::{CommittedStatus, ParseError};
 use std::fmt::Display;
+use crate::core::parser::rc_parser::reusable_parser;
 
 pub fn end<'a, I: 'a>() -> impl Parser<'a, I, ()>
 where
   I: Display, {
-  FuncParser::new(move |mut parse_context: ParseContext<'a, I>| {
-    let input = parse_context.input();
-    if let Some(actual) = input.get(0) {
-      let msg = format!("expect end of input, found: {}", actual);
-      parse_context.next_mut();
-      let pe = ParseError::of_mismatch(parse_context, 1, msg);
-      ParseResult::failed_with_uncommitted(pe)
-    } else {
-      ParseResult::successful(parse_context, (), 0)
-    }
+  reusable_parser(move || {
+    FuncParser::new(move |mut parse_context: ParseContext<'a, I>| {
+      let input = parse_context.input();
+      if let Some(actual) = input.get(0) {
+        let msg = format!("expect end of input, found: {}", actual);
+        parse_context.next_mut();
+        let pe = ParseError::of_mismatch(parse_context, 1, msg);
+        ParseResult::failed_with_uncommitted(pe)
+      } else {
+        ParseResult::successful(parse_context, (), 0)
+      }
+    })
   })
 }
 
 /// Always successful parser
 pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Parser<'a, I, A> {
-  FuncParser::new(move |parse_context: ParseContext<'a, I>| {
-    ParseResult::successful(parse_context, value.clone(), length)
+  let value_clone = value;
+  reusable_parser(move || {
+    let v = value_clone.clone();
+    FuncParser::new(move |parse_context: ParseContext<'a, I>| {
+      ParseResult::successful(parse_context, v.clone(), length)
+    })
   })
 }
 
@@ -64,17 +71,25 @@ where
   A: Clone + 'a,
   P: Parser<'a, I, A> + 'a,
   F: Fn() -> P + Clone + 'a, {
-  unit().flat_map(move |_| f())
+  use crate::core::parser::rc_parser::reusable_parser;
+  reusable_parser(f)
 }
 
 pub fn failed<'a, I: Clone + 'a, A: Clone + 'a>(
   parse_error: ParseError<'a, I>,
   committed_status: CommittedStatus,
 ) -> impl Parser<'a, I, A> {
-  FuncParser::new(move |_| ParseResult::failed(parse_error.clone(), committed_status))
+  let err_clone = parse_error.clone();
+  let status = committed_status;
+  reusable_parser(move || {
+    let err = err_clone.clone();
+    FuncParser::new(move |_| ParseResult::failed(err.clone(), status))
+  })
 }
 
 /// Do nothing parser - does not consume input and returns no value
 pub fn empty<'a, I: 'a>() -> impl Parser<'a, I, ()> {
-  FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, (), 0))
+  reusable_parser(move || {
+    FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, (), 0))
+  })
 }

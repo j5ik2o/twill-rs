@@ -8,8 +8,7 @@ pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> impl Parser<'a, I, &'a I> + Clone
 where
   F: Fn(&'a I) -> bool + Clone + 'a,
   I: PartialEq + 'a, {
-  use crate::core::parser::rc_parser::reusable_with_clone;
-  reusable_with_clone(FuncParser::new(move |mut parse_context: ParseContext<'a, I>| {
+  FuncParser::new(move |mut parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
     if let Some(actual) = input.get(0) {
       if f(actual) {
@@ -21,7 +20,7 @@ where
     parse_context.next_mut();
     let pe = ParseError::of_mismatch(parse_context, 1, msg);
     ParseResult::failed_with_uncommitted(pe)
-  }))
+  })
 }
 
 pub fn elm_ref<'a, I>(element: I) -> impl Parser<'a, I, &'a I> + Clone

@@ -8,7 +8,7 @@ use crate::core::{successful, RcParser};
 
 /// Trait providing binary operator related parser operations
 pub trait BinaryOperatorParser<'a, I: 'a, A>:
-  Parser<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A> + Sized + Clone
+  Parser<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
 where
   Self: 'a, {
   /// Right associative binary operator parsing
@@ -137,10 +137,10 @@ where
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + 'a, {
-    let self_clone = self.clone();
-    let op_clone = op.clone();
+    let self_clone = reusable_with_clone(self.clone());
+    let op_clone = reusable_with_clone(op.clone());
 
-    reusable_with_clone(FuncParser::new(move |pc| {
+    RcParser::new(move |pc| {
       // 左結合で連続して式を解析する
       let mut current_value = x.clone();
       let mut current_pc = pc.with_same_state();
@@ -148,7 +148,7 @@ where
 
       // 繰り返し処理
       loop {
-        let op_result = reusable_with_clone(op_clone.clone()).run(current_pc.with_same_state());
+        let op_result = op_clone.clone().run(current_pc.with_same_state());
 
         match op_result {
           ParseResult::Success {
@@ -157,7 +157,7 @@ where
             length: op_length,
           } => {
             // 演算子の後には式が続くはず
-            let expr_result = reusable_with_clone(self_clone.clone()).run(parse_context);
+            let expr_result = self_clone.clone().run(parse_context);
 
             match expr_result {
               ParseResult::Success {
@@ -188,7 +188,7 @@ where
 
       // 最終結果を返す
       ParseResult::successful(pc, current_value, total_length)
-    }))
+    })
   }
 }
 
