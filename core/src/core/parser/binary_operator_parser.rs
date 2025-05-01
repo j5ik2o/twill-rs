@@ -16,9 +16,7 @@ where
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + Clone + 'a, {
-    self.clone().flat_map(move |x| {
-      self.clone().rest_right1(op.clone(), x)
-    })
+    self.clone().flat_map(move |x| self.clone().rest_right1(op.clone(), x))
   }
 
   /// Left associative binary operator parsing
@@ -27,9 +25,7 @@ where
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + 'a, {
-    self.clone().flat_map(move |x| {
-      self.clone().rest_left1(op.clone(), x)
-    }) 
+    self.clone().flat_map(move |x| self.clone().rest_left1(op.clone(), x))
   }
 
   /// Right associative binary operator parsing helper
@@ -39,10 +35,12 @@ where
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + 'a, {
     let default_value = x.clone();
-    op.clone().flat_map(move |f| {
-      let default_value = x.clone();
-      self.clone().map(move |y| f(default_value.clone(), y))
-    }).or(successful(default_value.clone()))
+    op.clone()
+      .flat_map(move |f| {
+        let default_value = x.clone();
+        self.clone().map(move |y| f(default_value.clone(), y))
+      })
+      .or(successful(default_value.clone()))
   }
 
   /// Left associative binary operator parsing helper with the default value
