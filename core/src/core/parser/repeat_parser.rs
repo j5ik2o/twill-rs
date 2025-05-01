@@ -35,6 +35,7 @@ where
   fn many0_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
   where
     P2: Parser<'a, I, B> + 'a,
+    A: 'a,
     B: 'a, {
     self.repeat_sep(0.., Some(separator))
   }
@@ -42,6 +43,7 @@ where
   fn many1_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
   where
     P2: Parser<'a, I, B> + 'a,
+    A: 'a,
     B: 'a, {
     self.repeat_sep(1.., Some(separator))
   }
@@ -49,22 +51,22 @@ where
   fn repeat_sep<P2, B, R>(self, range: R, separator_opt: Option<P2>) -> impl Parser<'a, I, Vec<A>>
   where
     R: RangeArgument<usize> + 'a,
+    A: 'a,
     B: 'a,
     P2: Parser<'a, I, B> + 'a, {
-    FuncParser::new(move |pc: ParseContext<'a, I>| {
+    let parser = to_rc_parser(self);
+    let separator = to_rc_parser_opt(separator_opt);
+    FuncParser::new(move |parse_context| {
       let mut all_length = 0;
       let mut items = vec![];
-
-      let rc_parser = to_rc_parser(self);
-      let sep_parser_opt = to_rc_parser_opt(separator_opt);
 
       if let ParseResult::Success {
         parse_context: pc1,
         value,
         length,
-      } = rc_parser.clone().run(pc.with_same_state())
+      } = parser.clone().run(parse_context.with_same_state())
       {
-        let mut current_pc = pc1.advance(length);
+        let mut current_parse_state = pc1.advance(length);
         items.push(value);
         all_length += length;
         loop {
@@ -82,29 +84,28 @@ where
             _ => (),
           }
 
-          if let Some(separator) = &sep_parser_opt {
+          if let Some(sep) = &separator {
             if let ParseResult::Success {
               parse_context: pc2,
               length,
               ..
-            } = separator.clone().run(current_pc)
+            } = sep.clone().run(current_parse_state)
             {
-              current_pc = pc2.advance(length);
+              current_parse_state = pc2.advance(length);
               all_length += length;
             } else {
               break;
             }
           }
-
           if let ParseResult::Success {
-            parse_context: pc2,
+            parse_context: pc3,
             value,
             length,
-          } = rc_parser.clone().run(current_pc)
+          } = parser.clone().run(current_parse_state)
           {
-            current_pc = pc2.advance(length);
-            all_length += length;
+            current_parse_state = pc3.advance(length);
             items.push(value);
+            all_length += length;
           } else {
             break;
           }
@@ -113,17 +114,20 @@ where
 
       if let Bound::Included(&min_count) = range.start() {
         if items.len() < min_count {
-          let pc = pc.advance(all_length);
+          let pc = parse_context.advance(all_length);
           let pe = ParseError::of_mismatch(
             pc,
             all_length,
-            format!("Expected at least {} items, but got {}", min_count, items.len()),
+            format!(
+              "expect repeat at least {} times, found {} times",
+              min_count,
+              items.len()
+            ),
           );
           return ParseResult::failed_with_uncommitted(pe);
         }
       }
-
-      ParseResult::successful(pc, items, all_length)
+      ParseResult::successful(parse_context, items, all_length)
     })
   }
 }

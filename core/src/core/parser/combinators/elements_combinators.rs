@@ -31,7 +31,7 @@ where
 
 pub fn elm_any_ref<'a, I>() -> impl Parser<'a, I, &'a I>
 where
-    I: Element + PartialEq + 'a, {
+  I: Element + PartialEq + 'a, {
   elm_pred_ref(|_| true)
 }
 
