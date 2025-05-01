@@ -4,6 +4,7 @@ use crate::core::parser::OrParser;
 use crate::core::parser::ParserMonad;
 use crate::core::parser::RcParser;
 use crate::core::parser::{FuncParser, Parser};
+use crate::prelude::successful;
 
 /// Trait providing binary operator related parser operations
 pub trait BinaryOperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
@@ -15,33 +16,9 @@ where
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + Clone + 'a, {
-    let parser_clone = self.clone();
-    let op_clone = op.clone();
-
-    reusable_with_clone(FuncParser::new(move |pc| {
-      let first_result = reusable_with_clone(parser_clone.clone()).run(pc);
-      match first_result {
-        ParseResult::Success {
-          parse_context,
-          value,
-          length,
-        } => {
-          let next_parser = self.clone().rest_right1(op_clone.clone(), value.clone());
-          let next_result = next_parser.run(parse_context);
-          match next_result {
-            ParseResult::Success {
-              parse_context,
-              value,
-              length: next_length,
-            } => ParseResult::successful(parse_context, value, length + next_length),
-            ParseResult::Failure { error, .. } => {
-              ParseResult::successful(error.parse_context().with_same_state(), value, length)
-            }
-          }
-        }
-        failed => failed,
-      }
-    }))
+    self.clone().flat_map(move |x| {
+      self.clone().rest_right1(op.clone(), x)
+    })
   }
 
   /// Left associative binary operator parsing
@@ -50,33 +27,9 @@ where
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + 'a, {
-    let parser_clone = self.clone();
-    let op_clone = op.clone();
-
-    reusable_with_clone(FuncParser::new(move |pc| {
-      let first_result = reusable_with_clone(parser_clone.clone()).run(pc);
-      match first_result {
-        ParseResult::Success {
-          parse_context,
-          value,
-          length,
-        } => {
-          let next_parser = self.clone().rest_left1(op_clone.clone(), value.clone());
-          let next_result = next_parser.run(parse_context);
-          match next_result {
-            ParseResult::Success {
-              parse_context,
-              value,
-              length: next_length,
-            } => ParseResult::successful(parse_context, value, length + next_length),
-            ParseResult::Failure { error, .. } => {
-              ParseResult::successful(error.parse_context().with_same_state(), value, length)
-            }
-          }
-        }
-        failed => failed,
-      }
-    }))
+    self.clone().flat_map(move |x| {
+      self.clone().rest_left1(op.clone(), x)
+    }) 
   }
 
   /// Right associative binary operator parsing helper
@@ -86,43 +39,10 @@ where
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + 'a, {
     let default_value = x.clone();
-    let self_clone = self.clone();
-    let op_clone = op.clone();
-
-    reusable_with_clone(FuncParser::new(move |pc| {
-      let op_result = reusable_with_clone(op_clone.clone()).run(pc);
-
-      match op_result {
-        ParseResult::Success {
-          parse_context,
-          value: f,
-          length: op_length,
-        } => {
-          let next_parser = reusable_with_clone(self_clone.clone());
-          let expr_result = next_parser.run(parse_context);
-
-          match expr_result {
-            ParseResult::Success {
-              parse_context,
-              value: y,
-              length: expr_length,
-            } => {
-              // 次の式の結果とデフォルト値を関数に適用
-              let result = f(y, default_value.clone());
-              ParseResult::successful(parse_context, result, op_length + expr_length)
-            }
-            ParseResult::Failure {
-              error,
-              committed_status,
-            } => ParseResult::failed(error, committed_status),
-          }
-        }
-        ParseResult::Failure { error, .. } => {
-          // 演算子が見つからない場合はデフォルト値を返す
-          ParseResult::successful(error.parse_context().with_same_state(), x.clone(), 0)
-        }
-      }
-    }))
+    op.clone().flat_map(move |f| {
+      let default_value = x.clone();
+      self.clone().map(move |y| f(default_value.clone(), y))
+    }).or(successful(default_value.clone()))
   }
 
   /// Left associative binary operator parsing helper with the default value

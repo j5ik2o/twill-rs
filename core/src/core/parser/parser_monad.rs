@@ -12,7 +12,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
     A: Clone + 'a,
     B: Clone + 'a,
     F: Fn(A) -> B + Clone + 'a, {
-    self.flat_map(move |a| successful(f(a), 0))
+    self.flat_map(move |a| successful(f(a)))
   }
 
   /// Chain parsers

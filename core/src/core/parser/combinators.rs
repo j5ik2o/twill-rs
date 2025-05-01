@@ -32,11 +32,11 @@ where
 }
 
 /// Always successful parser
-pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Parser<'a, I, A> {
+pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A) -> impl Parser<'a, I, A> {
   let value_clone = value;
   reusable_parser(move || {
     let v = value_clone.clone();
-    FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, v.clone(), length))
+    FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, v.clone(), 0))
   })
 }
 
@@ -60,7 +60,7 @@ pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Par
 /// assert_eq!(result.success().unwrap(), ());
 /// ```
 pub fn unit<'a, I: 'a>() -> impl Parser<'a, I, ()> {
-  successful((), 0)
+  successful(())
 }
 
 pub fn lazy<'a, I: 'a, A, P, F>(f: F) -> impl Parser<'a, I, A>
