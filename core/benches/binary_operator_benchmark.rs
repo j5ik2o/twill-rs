@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::time::Duration;
-use twill_core::core::parser::rc_parser::to_rc_parser;
+use twill_core::core::parser::rc_parser::reusable_with_clone;
 use twill_core::core::{BinaryOperatorParser, OrParser, ParseContext, Parser, ParserMonad};
 use twill_core::examples::string_parser::string;
 
@@ -35,7 +35,7 @@ fn bench_left_associative_parser(c: &mut Criterion) {
         let ctx = create_context(input);
 
         // 数値パーサー (Cloneを実装するためにRcParserでラップする)
-        let digit = to_rc_parser(
+        let digit = reusable_with_clone(
           string("1")
             .map(|_| 1)
             .or(string("2").map(|_| 2))
@@ -50,7 +50,7 @@ fn bench_left_associative_parser(c: &mut Criterion) {
         );
 
         // 演算子パーサー (Cloneを実装するためにRcParserでラップする)
-        let add_op = to_rc_parser(string("+").map(|_| |a: i32, b: i32| a + b));
+        let add_op = reusable_with_clone(string("+").map(|_| |a: i32, b: i32| a + b));
 
         // 左結合演算子パーサー
         digit.chain_left1(add_op).run(ctx)

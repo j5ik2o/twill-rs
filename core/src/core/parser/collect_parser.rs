@@ -7,7 +7,7 @@ where
   fn collect(self) -> impl Parser<'a, I, &'a [I]>
   where
     A: 'a, {
-    FuncParser::new(move |parse_context| match self.run(parse_context) {
+    FuncParser::new(move |parse_context| match self.clone().run(parse_context) {
       ParseResult::Success {
         parse_context: pc1,
         length,

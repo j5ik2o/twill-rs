@@ -21,7 +21,7 @@ pub use repeat_parser::*;
 pub use transform_parser::*;
 
 /// Basic parser trait
-pub trait Parser<'a, I: 'a, A> {
+pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
   fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A>
@@ -32,16 +32,31 @@ pub trait Parser<'a, I: 'a, A> {
   }
 }
 
+// Parserを参照として実装できるようにするためのヘルパートレイト
+pub trait ParserRef<'a, I: 'a, A> {
+  fn run_ref(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
+}
+
+// Cloneを実装したParserに対して、参照からの実行を可能にする
+impl<'a, P, I: 'a, A> ParserRef<'a, I, A> for P
+where
+  P: Parser<'a, I, A> + Clone,
+{
+  fn run_ref(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+    self.clone().run(parse_context)
+  }
+}
+
 pub(crate) struct FuncParser<'a, I: 'a, A, F>
 where
-  F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: F,
   _phantom: PhantomData<(&'a I, A)>,
 }
 
 impl<'a, I: 'a, A, F> FuncParser<'a, I, A, F>
 where
-  F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
   pub(crate) fn new(parser_fn: F) -> Self {
     FuncParser {
@@ -53,9 +68,22 @@ where
 
 impl<'a, I, A, F> Parser<'a, I, A> for FuncParser<'a, I, A, F>
 where
-  F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  A: Clone + 'a,
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
 {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
     (self.parser_fn)(parse_context)
+  }
+}
+
+impl<'a, I, A, F> Clone for FuncParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
+{
+  fn clone(&self) -> Self {
+    FuncParser {
+      parser_fn: self.parser_fn.clone(),
+      _phantom: PhantomData,
+    }
   }
 }

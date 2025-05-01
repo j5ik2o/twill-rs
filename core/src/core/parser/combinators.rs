@@ -29,7 +29,7 @@ where
 
 /// Always successful parser
 pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Parser<'a, I, A> {
-  FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value, length))
+  FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value.clone(), length))
 }
 
 /// Returns a [Parser] that does nothing.<br/>
@@ -59,17 +59,17 @@ pub fn unit<'a, I: 'a>() -> impl Parser<'a, I, ()> {
 
 pub fn lazy<'a, I: 'a, A, P, F>(f: F) -> impl Parser<'a, I, A>
 where
-  A: 'a,
+  A: Clone + 'a,
   P: Parser<'a, I, A> + 'a,
-  F: FnOnce() -> P + 'a, {
+  F: Fn() -> P + Clone + 'a, {
   unit().flat_map(move |_| f())
 }
 
-pub fn failed<'a, I: 'a, A>(
+pub fn failed<'a, I: Clone + 'a, A: Clone + 'a>(
   parse_error: ParseError<'a, I>,
   committed_status: CommittedStatus,
 ) -> impl Parser<'a, I, A> {
-  FuncParser::new(move |_| ParseResult::failed(parse_error, committed_status))
+  FuncParser::new(move |_| ParseResult::failed(parse_error.clone(), committed_status))
 }
 
 /// Do nothing parser - does not consume input and returns no value

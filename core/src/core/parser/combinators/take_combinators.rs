@@ -16,7 +16,7 @@ pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> {
 
 pub fn take_while0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
-  F: Fn(&I) -> bool + 'a,
+  F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
   FuncParser::new(move |parse_context| {
     let input = parse_context.input();
@@ -44,7 +44,7 @@ where
 
 pub fn take_while1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
-  F: Fn(&I) -> bool + 'a,
+  F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
   FuncParser::new(move |parse_context| {
     let input = parse_context.input();
@@ -69,7 +69,7 @@ where
 
 pub fn take_while_n_m<'a, I, F>(n: usize, m: usize, f: F) -> impl Parser<'a, I, &'a [I]>
 where
-  F: Fn(&I) -> bool + 'a,
+  F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
   FuncParser::new(move |parse_context| {
     let input = parse_context.input();
@@ -101,7 +101,7 @@ where
 
 pub fn take_till0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
-  F: Fn(&I) -> bool + 'a,
+  F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
   FuncParser::new(move |parse_state| {
     let input = parse_state.input();
@@ -126,7 +126,7 @@ where
 
 pub fn take_till1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
-  F: Fn(&I) -> bool + 'a,
+  F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
   FuncParser::new(move |parse_context| {
     let input = parse_context.input();

@@ -3,14 +3,15 @@ use crate::core::parse_result::ParseResult;
 use crate::core::parser::{FuncParser, Parser};
 
 /// Trait providing parser transformation methods
-pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
+pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
   /// Transform success result
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
-    F: FnOnce(A) -> B + 'a, {
+      B: Clone + 'a,
+    F: Fn(A) -> B + Clone + 'a, {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success {
           parse_context,
           value,
@@ -28,10 +29,11 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
+      B: Clone + 'a,
     P: Parser<'a, I, B> + 'a,
-    F: FnOnce(A) -> P + 'a, {
+    F: Fn(A) -> P + Clone + 'a, {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success {
           parse_context, value, ..
         } => f(value).run(parse_context),
@@ -47,9 +49,10 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   fn with_filter<F>(self, f: F) -> impl Parser<'a, I, A>
   where
     Self: 'a,
-    F: FnOnce(&A) -> bool + 'a, {
+      A: Clone + 'a,
+    F: Fn(&A) -> bool + Clone + 'a, {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success {
           parse_context,
           value,
@@ -71,4 +74,4 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
 }
 
 /// Provide extension methods to all parsers
-impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: Parser<'a, I, A> {}
+impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: Parser<'a, I, A> + Clone {}
