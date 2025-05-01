@@ -13,9 +13,12 @@ pub mod operator_parser;
 pub mod or_parser;
 pub mod parser_monad;
 pub mod rc_parser;
-pub mod repeat_parser;
+mod repeat_parser;
 pub mod skip_parser;
-pub mod transform_parser;
+mod transform_parser;
+
+pub use repeat_parser::*;
+pub use transform_parser::*;
 
 /// Basic parser trait
 pub trait Parser<'a, I: 'a, A> {

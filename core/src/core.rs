@@ -17,5 +17,5 @@ pub use parser::operator_parser::OperatorParser;
 pub use parser::or_parser::OrParser;
 pub use parser::parser_monad::ParserMonad;
 pub use parser::rc_parser::RcParser;
-pub use parser::transform_parser::TransformParser;
+pub use parser::TransformParser;
 pub use parser::Parser;
