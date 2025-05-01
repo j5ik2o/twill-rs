@@ -11,7 +11,7 @@ use crate::core::parse_result::ParseResult;
 use crate::core::parser::rc_parser::reusable_parser;
 use crate::core::parser::{FuncParser, Parser};
 use crate::core::{CommittedStatus, ParseError, SkipParser};
-use std::fmt::{Display};
+use std::fmt::Display;
 
 pub fn end<'a, I: 'a>() -> impl Parser<'a, I, ()>
 where

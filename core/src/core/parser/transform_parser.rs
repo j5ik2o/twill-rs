@@ -9,7 +9,9 @@ pub trait TransformParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A
 where
   Self: 'a, {
   /// Discard the result and return ()
-  fn discard(self) -> impl Parser<'a, I, ()> where A: Clone + 'a {
+  fn discard(self) -> impl Parser<'a, I, ()>
+  where
+    A: Clone + 'a, {
     self.map(|_| ())
   }
 

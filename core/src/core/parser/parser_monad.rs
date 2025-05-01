@@ -25,7 +25,9 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
     FuncParser::new(
       move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success {
-          parse_context, value, length,
+          parse_context,
+          value,
+          length,
         } => f(value).run(parse_context.advance(length)),
         ParseResult::Failure {
           error,
