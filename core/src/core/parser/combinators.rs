@@ -29,7 +29,9 @@ where
 
 /// Always successful parser
 pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Parser<'a, I, A> {
-  FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value.clone(), length))
+  FuncParser::new(move |parse_context: ParseContext<'a, I>| {
+    ParseResult::successful(parse_context, value.clone(), length)
+  })
 }
 
 /// Returns a [Parser] that does nothing.<br/>

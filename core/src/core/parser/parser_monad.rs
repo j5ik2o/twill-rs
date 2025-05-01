@@ -8,7 +8,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
-      B: Clone + 'a,
+    B: Clone + 'a,
     F: Fn(A) -> B + Clone + 'a, {
     FuncParser::new(
       move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
@@ -29,7 +29,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
   fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
-      B: Clone + 'a,
+    B: Clone + 'a,
     P: Parser<'a, I, B> + 'a,
     F: Fn(A) -> P + Clone + 'a, {
     FuncParser::new(
@@ -49,7 +49,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
   fn with_filter<F>(self, f: F) -> impl Parser<'a, I, A>
   where
     Self: 'a,
-      A: Clone + 'a,
+    A: Clone + 'a,
     F: Fn(&A) -> bool + Clone + 'a, {
     FuncParser::new(
       move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {

@@ -171,13 +171,13 @@ where
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
   use crate::core::parser::combinators::elm_ref_in;
-  use crate::core::Parser;
   use crate::core::parser::rc_parser::reusable_parser;
+  use crate::core::Parser;
 
   #[test]
-  fn test_elm_ref_in(){
+  fn test_elm_ref_in() {
     let text = "abc";
     let input = text.chars().collect::<Vec<_>>();
     // ファクトリー関数を使用してパーサーを生成

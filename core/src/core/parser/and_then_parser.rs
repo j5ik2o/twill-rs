@@ -9,7 +9,7 @@ where
   fn and_then_with<F, P2, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     Self: 'a,
-      B: Clone + 'a,
+    B: Clone + 'a,
     P2: Parser<'a, I, B> + 'a,
     F: Fn(A) -> P2 + Clone + 'a, {
     self.flat_map(f)

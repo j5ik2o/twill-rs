@@ -1,9 +1,9 @@
+use crate::core::committed_status::CommittedStatus;
+use crate::core::parser::collect_parser::CollectParser;
 use crate::core::parser::rc_parser::reusable_with_clone;
 use crate::core::parser::FuncParser;
 use crate::core::util::{Bound, RangeArgument};
 use crate::core::{BinaryOperatorParser, ParseError, ParseResult, Parser, ParserMonad};
-use crate::core::committed_status::CommittedStatus;
-use crate::core::parser::collect_parser::CollectParser;
 
 // 基本的なRepeatParserトレイト - Clone制約を追加
 pub trait RepeatParser<'a, I: 'a, A>: Parser<'a, I, A> + BinaryOperatorParser<'a, I, A> + Sized + Clone
@@ -89,18 +89,18 @@ where
 
       // 最初のパース
       let first_result = main_parser.clone().run(parse_context.with_same_state());
-      
+
       match first_result {
         ParseResult::Success {
           parse_context: pc1,
           value,
           length,
         } => {
-          println!("length:{}",length);
+          println!("length:{}", length);
           let mut current_parse_state = pc1.advance(length);
           items.push(value);
           all_length += length;
-          
+
           // メインループ
           loop {
             let should_break = match range.end() {
@@ -108,7 +108,7 @@ where
               Bound::Excluded(&max_count) => items.len() + 1 >= max_count,
               _ => false,
             };
-            println!("bBreak:{}",should_break);
+            println!("bBreak:{}", should_break);
             if should_break {
               break;
             }
@@ -121,18 +121,18 @@ where
               // 新しいパースコンテキストを生成（with_same_stateを使用）
               let sep_parse_state = current_parse_state.with_same_state();
               let sep_result = sep.clone().run(sep_parse_state);
-              
+
               match sep_result {
                 ParseResult::Success {
                   parse_context: pc2,
                   length,
                   ..
                 } => {
-                  println!("sep: length:{}",length);
+                  println!("sep: length:{}", length);
                   current_parse_state = pc2.advance(length);
                   all_length += length;
                   sep_length = length;
-                },
+                }
                 _ => {
                   println!("sep: failed");
                   sep_success = false;
@@ -147,18 +147,18 @@ where
             // 次の要素をパース - 新しいパースコンテキストを生成
             let next_parse_state = current_parse_state.with_same_state();
             let next_result = main_parser.clone().run(next_parse_state);
-            
+
             match next_result {
               ParseResult::Success {
                 parse_context: pc3,
                 value,
                 length,
               } => {
-                println!("n: length:{}",length);
+                println!("n: length:{}", length);
                 current_parse_state = pc3.advance(length);
                 items.push(value);
                 all_length += length;
-              },
+              }
               _ => {
                 // 次の要素パースに失敗した場合は、セパレーターの結果をロールバック
                 if sep_length > 0 {
@@ -186,13 +186,14 @@ where
               return ParseResult::failed(pe, CommittedStatus::Uncommitted);
             }
           }
-          
+
           ParseResult::successful(parse_context, items, all_length)
-        },
-        // 最初のパースが失敗した場合
-        ParseResult::Failure { error, committed_status } => {
-          ParseResult::failed(error, committed_status)
         }
+        // 最初のパースが失敗した場合
+        ParseResult::Failure {
+          error,
+          committed_status,
+        } => ParseResult::failed(error, committed_status),
       }
     })
   }
@@ -207,7 +208,7 @@ mod tests {
   use crate::core::parse_context::ParseContext;
   use crate::core::parse_result::ParseResult;
   use crate::core::parser::rc_parser::RcParser;
-  
+
   // 単純なクローン可能なパーサーを作成
   fn char_parser<'a>(c: char) -> impl Parser<'a, char, char> + Clone {
     // RcParserを直接使う（これはクローン可能）
@@ -218,83 +219,81 @@ mod tests {
           return ParseResult::successful(parse_context.with_same_state(), actual, 1);
         }
       }
-      ParseResult::failed_with_uncommitted(
-        ParseError::of_mismatch(parse_context, 0, format!("Expected {}", c)),
-      )
+      ParseResult::failed_with_uncommitted(ParseError::of_mismatch(parse_context, 0, format!("Expected {}", c)))
     })
   }
-  
+
   #[test]
   fn test_basic_repeat() {
     // テストデータ
     let text = "aaab";
     let input: Vec<char> = text.chars().collect();
-    
+
     // 文字「a」を認識するクローン可能なパーサー
     let a_parser = char_parser('a');
-    
+
     // 0回以上の繰り返し
     let many_a = a_parser.of_many0();
-    
+
     // パース実行
     let result = many_a.parse(&input);
-    
+
     // 結果を検証
     assert!(result.is_success());
     if let ParseResult::Success { value, length, .. } = result {
       assert_eq!(value.len(), 3); // 「a」が3回見つかるはず
-      assert_eq!(length, 3);      // 消費される長さは3
+      assert_eq!(length, 3); // 消費される長さは3
     } else {
       panic!("Expected success but got failure");
     }
   }
-  
+
   #[test]
   fn test_repeat_with_separator() {
     // テスト用の入力文字列
     let text = "a,a,a,b";
     let input: Vec<char> = text.chars().collect();
-    
+
     // 文字認識用パーサー - クローン可能なものを使用
     let a_parser = char_parser('a');
     let comma_parser = char_parser(',');
-    
+
     // カンマ区切りのリスト
     let a_comma_list = a_parser.of_many1_sep(comma_parser);
-    
+
     // パース実行
     let result = a_comma_list.parse(&input);
-    
+
     // 結果を検証
     assert!(result.is_success());
     if let ParseResult::Success { value, length, .. } = result {
       assert_eq!(value.len(), 3); // 「a」が3つあるはず
-      assert_eq!(length, 5);      // 「a,a,a」で長さ5
+      assert_eq!(length, 5); // 「a,a,a」で長さ5
     } else {
       panic!("Expected success but got failure");
     }
   }
-  
+
   #[test]
   fn test_exact_repeat_count() {
     // テスト用の入力文字列
     let text = "aaaa";
     let input: Vec<char> = text.chars().collect();
-    
+
     // 文字「a」を認識するクローン可能なパーサー
     let a_parser = char_parser('a');
-    
+
     // ちょうど3回の繰り返し
     let exactly_three_a = a_parser.count(3);
-    
+
     // パース実行
     let result = exactly_three_a.parse(&input);
-    
+
     // 結果を検証
     assert!(result.is_success());
     if let ParseResult::Success { value, length, .. } = result {
       assert_eq!(value.len(), 3); // 要素数は3
-      assert_eq!(length, 3);      // 消費された長さも3
+      assert_eq!(length, 3); // 消費された長さも3
     } else {
       panic!("Expected success but got failure");
     }

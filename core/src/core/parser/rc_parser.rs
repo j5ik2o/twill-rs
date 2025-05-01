@@ -1,6 +1,6 @@
+use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
-use std::cell::RefCell;
 
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
@@ -38,10 +38,9 @@ pub fn reusable_parser<'a, I: 'a, A, P, F>(
 where
   F: Fn() -> P + 'a,
   P: Parser<'a, I, A>, {
-  
   // factoryをRcでラップして共有
   let factory_rc = Rc::new(factory);
-  
+
   RcParser::new(move |ctx| {
     // 毎回ファクトリを使って新しいパーサーインスタンスを生成
     let parser = factory_rc();
@@ -57,10 +56,9 @@ pub fn reusable_with_clone<'a, I: 'a, A, P>(
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where
   P: Parser<'a, I, A> + Clone + 'a, {
-  
   // クローン可能なパーサーを利用
   let parser_clone = parser;
-  
+
   // reusable_parserを利用して実装
   reusable_parser(move || parser_clone.clone())
 }
@@ -89,7 +87,7 @@ where
 
 impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
 where
-    A: 'a,
+  A: 'a,
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {

@@ -1,7 +1,7 @@
+use crate::core::committed_status::CommittedStatus;
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::{FuncParser, Parser};
-use crate::core::committed_status::CommittedStatus;
 
 /// Provide alternative parser operations
 pub trait OrParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone
@@ -10,15 +10,15 @@ where
   /// Try a second parser if the first fails
   fn or<P>(self, other: P) -> impl Parser<'a, I, A>
   where
-      A: Clone + 'a,
+    A: Clone + 'a,
     P: Parser<'a, I, A> + Clone + 'a, {
     self.or_with(move || other.clone())
   }
 
   /// Try a dynamically generated parser if the first fails
   fn or_with<F, P>(self, f: F) -> impl Parser<'a, I, A>
-  where 
-      A: Clone + 'a,
+  where
+    A: Clone + 'a,
     P: Parser<'a, I, A> + 'a,
     F: Fn() -> P + Clone + 'a, {
     FuncParser::new(
