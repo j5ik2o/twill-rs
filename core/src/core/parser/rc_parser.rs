@@ -26,51 +26,67 @@ where
   }
 }
 
-/// Convert any parser to an RcParser without requiring Clone
+/// Create a reusable RcParser from a parser factory function
 ///
-/// This is useful for parsers that can only be used once.
-/// The returned RcParser can be cloned and used multiple times,
-/// but it will only successfully parse on the first use.
-pub fn to_rc_parser<'a, I: 'a, A, T>(
-  parser: T,
+/// This allows creating a parser that can be cloned and used multiple times,
+/// even though the underlying parser might not implement Clone.
+/// Each time the parser is run, the factory function is called to create a new parser instance.
+pub fn reusable_parser<'a, I: 'a, A, P, F>(
+  factory: F,
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where
-  T: Parser<'a, I, A> + 'a, {
-  use crate::core::committed_status::CommittedStatus;
-  use crate::core::parse_error::ParseError;
-  use std::cell::RefCell;
-
-  // パーサーをOptionでラップして一度だけ使用可能にする
-  let parser_cell = Rc::new(RefCell::new(Some(parser)));
+  F: Fn() -> P + 'a,
+  P: Parser<'a, I, A>, {
+  // factoryをRcでラップして共有
+  let factory_rc = Rc::new(factory);
 
   RcParser::new(move |ctx| {
-    // borrow_mutを使用して可変参照を取得し、takeでOptionからパーサーを取り出す
-    let parser_opt = parser_cell.borrow_mut().take();
-    match parser_opt {
-      Some(p) => p.run(ctx),
-      None => {
-        // パーサーが既に消費されている場合はエラーを返す
-        let error = ParseError::of_custom(
-          ctx.with_same_state(),
-          None,
-          "Parser has already been consumed.".to_string(),
-        );
-        ParseResult::failed(error, CommittedStatus::Uncommitted)
-      }
-    }
+    // 毎回ファクトリを使って新しいパーサーインスタンスを生成
+    let parser = factory_rc();
+    parser.run(ctx)
   })
 }
 
-pub fn to_rc_parser_opt<'a, I: 'a, A: 'a, T>(
-  parser_opt: Option<T>,
+/// Create a reusable RcParser from a cloneable parser
+///
+/// This creates a parser that can be used multiple times by cloning the original.
+pub fn reusable_with_clone<'a, I: 'a, A, P>(
+  parser: P,
+) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+where
+  P: Parser<'a, I, A>, {
+  // クローン可能なパーサーを利用
+  let parser_clone = parser;
+
+  // reusable_parserを利用して実装
+  reusable_parser(move || parser_clone.clone())
+}
+
+/// Create an optional reusable RcParser from an optional parser factory function
+pub fn reusable_parser_opt<'a, I: 'a, A: 'a, P, F>(
+  factory_opt: Option<F>,
 ) -> Option<RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>>
 where
-  T: Parser<'a, I, A> + 'a, {
-  parser_opt.map(to_rc_parser)
+  F: Fn() -> P + 'a,
+  P: Parser<'a, I, A>, {
+  match factory_opt {
+    Some(f) => Some(reusable_parser(f)),
+    None => None,
+  }
+}
+
+/// Create an optional reusable RcParser from an optional cloneable parser
+pub fn reusable_with_clone_opt<'a, I: 'a, A, P>(
+  parser_opt: Option<P>,
+) -> Option<RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>>
+where
+  P: Parser<'a, I, A> + Clone + 'a, {
+  parser_opt.map(reusable_with_clone)
 }
 
 impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
 where
+  A: 'a,
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {

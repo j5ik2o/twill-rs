@@ -9,14 +9,16 @@ pub trait TransformParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A
 where
   Self: 'a, {
   /// Discard the result and return ()
-  fn discard(self) -> impl Parser<'a, I, ()> {
+  fn discard(self) -> impl Parser<'a, I, ()>
+  where
+    A: Clone + 'a, {
     self.map(|_| ())
   }
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
   fn not(self) -> impl Parser<'a, I, ()> {
     FuncParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success { parse_context, .. } => {
           let len = parse_context.last_offset().unwrap_or(0);
           let parser_error = ParseError::of_mismatch(parse_context, len, "not predicate failed".to_string());

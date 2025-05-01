@@ -13,45 +13,54 @@ pub enum LogLevel {
 pub trait LoggingParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn name(self, name: &'a str) -> impl Parser<'a, I, A> {
-    FuncParser::new(move |parse_context| match self.run(parse_context.with_same_state()) {
-      res @ ParseResult::Success { .. } => res,
-      ParseResult::Failure {
-        error,
-        committed_status: is_committed,
-      } => match error {
-        ParseError::Custom { .. } => ParseResult::failed(error, is_committed),
-        _ => ParseResult::failed(
-          ParseError::of_custom(
-            parse_context,
-            Some(Box::new(error)),
-            format!("failed to parse {}", name),
+  fn name(self, name: &'a str) -> impl Parser<'a, I, A>
+  where
+    A: Clone + 'a, {
+    FuncParser::new(
+      move |parse_context| match self.clone().run(parse_context.with_same_state()) {
+        res @ ParseResult::Success { .. } => res,
+        ParseResult::Failure {
+          error,
+          committed_status: is_committed,
+        } => match error {
+          ParseError::Custom { .. } => ParseResult::failed(error, is_committed),
+          _ => ParseResult::failed(
+            ParseError::of_custom(
+              parse_context,
+              Some(Box::new(error)),
+              format!("failed to parse {}", name),
+            ),
+            is_committed,
           ),
+        },
+      },
+    )
+  }
+
+  fn expect(self, name: &'a str) -> impl Parser<'a, I, A>
+  where
+    A: Clone + 'a, {
+    FuncParser::new(
+      move |parse_context| match self.clone().run(parse_context.with_same_state()) {
+        res @ ParseResult::Success { .. } => res,
+        ParseResult::Failure {
+          error,
+          committed_status: is_committed,
+        } => ParseResult::failed(
+          ParseError::of_expect(parse_context, Box::new(error), format!("Expect {}", name)),
           is_committed,
         ),
       },
-    })
-  }
-
-  fn expect(self, name: &'a str) -> impl Parser<'a, I, A> {
-    FuncParser::new(move |parse_context| match self.run(parse_context.with_same_state()) {
-      res @ ParseResult::Success { .. } => res,
-      ParseResult::Failure {
-        error,
-        committed_status: is_committed,
-      } => ParseResult::failed(
-        ParseError::of_expect(parse_context, Box::new(error), format!("Expect {}", name)),
-        is_committed,
-      ),
-    })
+    )
   }
 
   fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> impl Parser<'a, I, A>
   where
-    F: Fn(&ParseResult<'a, I, A>) -> B + 'a,
+    A: Clone + 'a,
+    F: Fn(&ParseResult<'a, I, A>) -> B + Clone + 'a,
     B: Display + 'a, {
     FuncParser::new(move |parse_context| {
-      let pr = self.run(parse_context);
+      let pr = self.clone().run(parse_context);
       let s = format!("{} = {}", name, f(&pr));
       match log_level {
         LogLevel::Debug => log::debug!("{}", s),
@@ -64,4 +73,4 @@ where
   }
 }
 
-impl<'a, T, I: 'a, A> LoggingParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A: Clone + 'a> LoggingParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
