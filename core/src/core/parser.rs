@@ -2,22 +2,32 @@ use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use std::marker::PhantomData;
 
-pub mod and_then_parser;
-pub mod attempt_parser;
-pub mod binary_operator_parser;
-pub mod collect_parser;
-pub mod combinators;
+mod and_then_parser;
+mod attempt_parser;
+mod binary_operator_parser;
+mod collect_parser;
+mod combinators;
 mod logging_parser;
 mod offset_parser;
-pub mod operator_parser;
-pub mod or_parser;
-pub mod parser_monad;
-pub mod rc_parser;
+mod operator_parser;
+mod or_parser;
+mod parser_monad;
+mod rc_parser;
 mod repeat_parser;
-pub mod skip_parser;
+mod skip_parser;
 mod transform_parser;
 
+pub use and_then_parser::*;
+pub use attempt_parser::*;
+pub use binary_operator_parser::*;
+pub use collect_parser::*;
+pub use combinators::*;
+pub use operator_parser::*;
+pub use or_parser::*;
+pub use parser_monad::*;
+pub use rc_parser::*;
 pub use repeat_parser::*;
+pub use skip_parser::*;
 pub use transform_parser::*;
 
 /// Basic parser trait

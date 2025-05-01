@@ -1,14 +1,12 @@
-use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
-use crate::core::parser::or_parser::OrParser;
-use crate::core::parser::parser_monad::ParserMonad;
-use crate::core::parser::rc_parser::reusable_with_clone;
+use crate::core::parser::reusable_with_clone;
+use crate::core::parser::OrParser;
+use crate::core::parser::ParserMonad;
+use crate::core::parser::RcParser;
 use crate::core::parser::{FuncParser, Parser};
-use crate::core::{successful, RcParser};
 
 /// Trait providing binary operator related parser operations
-pub trait BinaryOperatorParser<'a, I: 'a, A>:
-  Parser<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
+pub trait BinaryOperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
 where
   Self: 'a, {
   /// Right associative binary operator parsing

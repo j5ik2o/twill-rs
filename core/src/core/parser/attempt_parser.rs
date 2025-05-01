@@ -1,5 +1,4 @@
 use crate::core::parse_context::ParseContext;
-use crate::core::parse_result::ParseResult;
 use crate::core::parser::{FuncParser, Parser};
 
 pub trait AttemptParser<'a, I: 'a, A>: Parser<'a, I, A>

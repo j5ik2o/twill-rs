@@ -6,11 +6,10 @@ pub use take_combinators::*;
 
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
-use crate::core::parser::parser_monad::ParserMonad;
+use crate::core::parser::rc_parser::reusable_parser;
 use crate::core::parser::{FuncParser, Parser};
 use crate::core::{CommittedStatus, ParseError};
 use std::fmt::Display;
-use crate::core::parser::rc_parser::reusable_parser;
 
 pub fn end<'a, I: 'a>() -> impl Parser<'a, I, ()>
 where
@@ -35,9 +34,7 @@ pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Par
   let value_clone = value;
   reusable_parser(move || {
     let v = value_clone.clone();
-    FuncParser::new(move |parse_context: ParseContext<'a, I>| {
-      ParseResult::successful(parse_context, v.clone(), length)
-    })
+    FuncParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, v.clone(), length))
   })
 }
 
@@ -47,7 +44,7 @@ pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A, length: usize) -> impl Par
 /// # Example
 ///
 /// ```rust
-/// use crate::twill_core::core::parser::combinators::unit;
+/// use crate::twill_core::core::parser::unit;
 /// use crate::twill_core::core::Parser;
 /// use crate::twill_core::core::ParseResult;
 ///

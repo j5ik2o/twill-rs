@@ -1,21 +1,12 @@
 use crate::core::committed_status::CommittedStatus;
-use crate::core::parser::collect_parser::CollectParser;
-use crate::core::parser::rc_parser::{reusable_parser, reusable_parser_opt, reusable_with_clone};
+use crate::core::parser::rc_parser::reusable_parser;
 use crate::core::parser::FuncParser;
+use crate::core::parser::{BinaryOperatorParser, ParseResult, Parser, ParserMonad};
 use crate::core::util::{Bound, RangeArgument};
-use crate::core::{BinaryOperatorParser, ParseError, ParseResult, Parser, ParserMonad};
+use crate::core::ParseError;
 
 // 基本的なRepeatParserトレイト - Clone制約を追加
 pub trait RepeatParser<'a, I: 'a, A>: Parser<'a, I, A> + BinaryOperatorParser<'a, I, A> + Sized + Clone
-where
-  Self: 'a, {
-}
-
-// すべてのパーサーに対して RepeatParser を実装
-impl<'a, T, I: 'a, A> RepeatParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + Clone + 'a {}
-
-// クローン可能なパーサー向けの拡張機能
-pub trait CloneableRepeater<'a, I: 'a, A>: RepeatParser<'a, I, A> + Clone
 where
   Self: 'a, {
   // 基本的な繰り返しパーサー - セパレーターなし
@@ -84,7 +75,7 @@ where
       let sep_clone = sep.clone();
       reusable_parser(move || sep_clone.clone())
     });
-    
+
     let range_capture = range;
 
     FuncParser::new(move |parse_context| {
@@ -113,7 +104,6 @@ where
               Bound::Excluded(&max_count) => items.len() + 1 >= max_count,
               _ => false,
             };
-            println!("bBreak:{}", should_break);
             if should_break {
               break;
             }
@@ -133,13 +123,11 @@ where
                   length,
                   ..
                 } => {
-                  println!("sep: length:{}", length);
                   current_parse_state = pc2.advance(length);
                   all_length += length;
                   sep_length = length;
                 }
                 _ => {
-                  println!("sep: failed");
                   sep_success = false;
                 }
               }
@@ -159,7 +147,6 @@ where
                 value,
                 length,
               } => {
-                println!("n: length:{}", length);
                 current_parse_state = pc3.advance(length);
                 items.push(value);
                 all_length += length;
@@ -169,7 +156,6 @@ where
                 if sep_length > 0 {
                   all_length -= sep_length;
                 }
-                println!("n: failed");
                 break;
               }
             }
@@ -205,12 +191,11 @@ where
 }
 
 // Cloneを実装したパーサーに対してCloneableRepeaterを実装
-impl<'a, T, I: 'a, A> CloneableRepeater<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + Clone + 'a {}
+impl<'a, T, I: 'a, A> RepeatParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + Clone + 'a {}
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::core::parse_context::ParseContext;
   use crate::core::parse_result::ParseResult;
   use crate::core::parser::combinators::elm_ref;
 
