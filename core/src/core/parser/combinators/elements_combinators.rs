@@ -481,7 +481,7 @@ pub fn regex<'a>(pattern: &str) -> impl ClonableParser<'a, char, String> {
 mod tests {
   use crate::core::parser::combinators::elm_ref_in;
   use crate::core::parser::rc_parser::reusable_parser;
-  use crate::core::{ClonableParser, Parser};
+  use crate::core::Parser;
 
   #[test]
   fn test_elm_ref_in() {

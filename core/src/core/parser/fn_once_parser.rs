@@ -1,7 +1,7 @@
 use crate::core::{ParseContext, ParseResult, Parser};
 use std::marker::PhantomData;
 
-pub(crate) struct FnOnceParser<'a, I: 'a, A, F>
+pub struct FnOnceParser<'a, I: 'a, A, F>
 where
   F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: F,
@@ -12,7 +12,7 @@ impl<'a, I: 'a, A, F> FnOnceParser<'a, I, A, F>
 where
   F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
-  pub(crate) fn new(parser_fn: F) -> Self {
+  pub fn new(parser_fn: F) -> Self {
     Self {
       parser_fn,
       _phantom: PhantomData,
