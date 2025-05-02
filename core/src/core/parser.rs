@@ -1,5 +1,5 @@
-use crate::core::parse_context::ParseContext;
-use crate::core::parse_result::ParseResult;
+use crate::core::ParseContext;
+use crate::core::ParseResult;
 
 mod and_then_parser;
 mod attempt_parser;
@@ -38,15 +38,11 @@ pub use transform_parser::*;
 pub trait Parser<'a, I: 'a, A>: Sized + 'a {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
-  fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A>
-  where
-    Self: Sized, {
+  fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A> {
     let parse_context = ParseContext::new(input, 0);
     self.run(parse_context)
   }
 }
 
 /// Basic parser trait
-pub trait ClonableParser<'a, I: 'a, A>: Parser<'a, I, A> + Clone + Sized + 'a {}
-
-// ---
+pub trait ClonableParser<'a, I: 'a, A>: Parser<'a, I, A> + Clone {}

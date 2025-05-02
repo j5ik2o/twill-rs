@@ -23,7 +23,7 @@ where
 impl<'a, I, A, F> Parser<'a, I, A> for FnOnceParser<'a, I, A, F>
 where
   A: Clone + 'a,
-  F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
+  F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
     (self.parser_fn)(parse_context)

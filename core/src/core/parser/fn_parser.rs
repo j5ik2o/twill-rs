@@ -12,7 +12,7 @@ impl<'a, I: 'a, A, F> FnParser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
-  pub(crate) fn new(parser_fn: F) -> Self {
+  pub fn new(parser_fn: F) -> Self {
     Self {
       parser_fn,
       _phantom: PhantomData,
