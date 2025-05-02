@@ -27,6 +27,33 @@ where
   }
 }
 
+impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
+where
+  A: 'a,
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
+  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+    (self.parser_fn)(parse_context)
+  }
+}
+
+impl<'a, I: 'a, A, F> Clone for RcParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
+  fn clone(&self) -> Self {
+    Self {
+      parser_fn: Rc::clone(&self.parser_fn),
+      _phantom: PhantomData,
+    }
+  }
+}
+
+impl<'a, I: 'a, A: Clone + 'a, F> ClonableParser<'a, I, A> for RcParser<'a, I, A, F> where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a
+{
+}
+
 /// Create a reusable RcParser from a parser factory function
 ///
 /// This allows creating a parser that can be cloned and used multiple times,
@@ -83,31 +110,4 @@ pub fn reusable_with_clone_opt<'a, I: 'a, A, P>(
 where
   P: ClonableParser<'a, I, A> + 'a, {
   parser_opt.map(reusable_with_clone)
-}
-
-impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
-where
-  A: 'a,
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
-{
-  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
-    (self.parser_fn)(parse_context)
-  }
-}
-
-impl<'a, I: 'a, A, F> Clone for RcParser<'a, I, A, F>
-where
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
-{
-  fn clone(&self) -> Self {
-    Self {
-      parser_fn: Rc::clone(&self.parser_fn),
-      _phantom: PhantomData,
-    }
-  }
-}
-
-impl<'a, I: 'a, A: Clone + 'a, F> ClonableParser<'a, I, A> for RcParser<'a, I, A, F> where
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a
-{
 }
