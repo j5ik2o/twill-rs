@@ -65,6 +65,16 @@ where
   }
 }
 
+impl<'a, I, A, F> Parser<'a, I, A> for FnOnceParser<'a, I, A, F>
+where
+    A: Clone + 'a,
+    F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
+{
+  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+    (self.parser_fn)(parse_context)
+  }
+}
+
 // ---
 
 pub(crate) struct FnParser<'a, I: 'a, A, F>
@@ -88,8 +98,8 @@ where
 
 impl<'a, I, A, F> Parser<'a, I, A> for FnParser<'a, I, A, F>
 where
-  A: Clone + 'a,
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
+    A: Clone + 'a,
+    F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
 {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
     (self.parser_fn)(parse_context)
