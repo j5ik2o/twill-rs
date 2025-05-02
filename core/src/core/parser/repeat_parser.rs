@@ -93,7 +93,7 @@ where
           length,
         } => {
           println!("length:{}", length);
-          let mut current_parse_state = pc1.advance(length);
+          let mut current_parse_context = pc1.advance(length);
           items.push(value);
           all_length += length;
 
@@ -114,7 +114,7 @@ where
 
             if let Some(ref sep) = separator {
               // 新しいパースコンテキストを生成（with_same_stateを使用）
-              let sep_parse_state = current_parse_state.with_same_state();
+              let sep_parse_state = current_parse_context.with_same_state();
               let sep_result = sep.clone().run(sep_parse_state);
 
               match sep_result {
@@ -123,7 +123,7 @@ where
                   length,
                   ..
                 } => {
-                  current_parse_state = pc2.advance(length);
+                  current_parse_context = pc2.advance(length);
                   all_length += length;
                   sep_length = length;
                 }
@@ -138,7 +138,7 @@ where
             }
 
             // 次の要素をパース - 新しいパースコンテキストを生成
-            let next_parse_state = current_parse_state.with_same_state();
+            let next_parse_state = current_parse_context.with_same_state();
             let next_result = main_parser.clone().run(next_parse_state);
 
             match next_result {
@@ -147,7 +147,7 @@ where
                 value,
                 length,
               } => {
-                current_parse_state = pc3.advance(length);
+                current_parse_context = pc3.advance(length);
                 items.push(value);
                 all_length += length;
               }

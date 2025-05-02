@@ -1,4 +1,4 @@
-use crate::core::parser::FnParser;
+use crate::core::FnParser;
 use crate::core::{ClonableParser, ParseContext, ParseError, ParseResult};
 
 // Parser that matches a specific string
