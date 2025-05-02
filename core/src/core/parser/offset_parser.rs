@@ -1,11 +1,11 @@
-use crate::core::parser::FuncParser;
-use crate::core::{ParseResult, Parser};
+use crate::core::parser::FnParser;
+use crate::core::{ClonableParser, ParseResult};
 
-pub trait OffsetParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
+pub trait OffsetParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn last_offset(self) -> impl Parser<'a, I, usize> {
-    FuncParser::new(move |parse_context| match self.clone().run(parse_context) {
+  fn last_offset(self) -> impl ClonableParser<'a, I, usize> {
+    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
       ParseResult::Success {
         mut parse_context,
         length,
@@ -22,8 +22,8 @@ where
     })
   }
 
-  fn offset(self) -> impl Parser<'a, I, usize> {
-    FuncParser::new(move |parse_context| match self.clone().run(parse_context) {
+  fn offset(self) -> impl ClonableParser<'a, I, usize> {
+    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
       ParseResult::Success {
         mut parse_context,
         length,
@@ -41,4 +41,4 @@ where
   }
 }
 
-impl<'a, T, I: 'a, A> OffsetParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A> OffsetParser<'a, I, A> for T where T: ClonableParser<'a, I, A> + 'a {}

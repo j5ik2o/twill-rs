@@ -1,27 +1,27 @@
 use crate::core::committed_status::CommittedStatus;
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
-use crate::core::parser::{FuncParser, Parser};
+use crate::core::parser::{ClonableParser, FnParser};
 
 /// Provide alternative parser operations
-pub trait OrParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone
+pub trait OrParser<'a, I: 'a, A>: ClonableParser<'a, I, A>
 where
   Self: 'a, {
   /// Try a second parser if the first fails
-  fn or<P>(self, other: P) -> impl Parser<'a, I, A>
+  fn or<P>(self, other: P) -> impl ClonableParser<'a, I, A>
   where
     A: Clone + 'a,
-    P: Parser<'a, I, A> + Clone + 'a, {
+    P: ClonableParser<'a, I, A> + 'a, {
     self.or_with(move || other.clone())
   }
 
   /// Try a dynamically generated parser if the first fails
-  fn or_with<F, P>(self, f: F) -> impl Parser<'a, I, A>
+  fn or_with<F, P>(self, f: F) -> impl ClonableParser<'a, I, A>
   where
     A: Clone + 'a,
-    P: Parser<'a, I, A> + 'a,
+    P: ClonableParser<'a, I, A> + 'a,
     F: Fn() -> P + Clone + 'a, {
-    FuncParser::new(
+    FnParser::new(
       move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         pr @ ParseResult::Failure {
           committed_status: CommittedStatus::Uncommitted,
@@ -37,4 +37,4 @@ where
 }
 
 /// Add Or methods to all parsers
-impl<'a, T, I: 'a, A> OrParser<'a, I, A> for T where T: Parser<'a, I, A> + Clone + 'a {}
+impl<'a, T, I: 'a, A> OrParser<'a, I, A> for T where T: ClonableParser<'a, I, A> + 'a {}

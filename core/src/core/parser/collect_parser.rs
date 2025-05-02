@@ -1,13 +1,13 @@
-use crate::core::parser::FuncParser;
-use crate::core::{ParseResult, Parser};
+use crate::core::parser::FnParser;
+use crate::core::{ClonableParser, ParseResult};
 
-pub trait CollectParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
+pub trait CollectParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn collect(self) -> impl Parser<'a, I, &'a [I]>
+  fn collect(self) -> impl ClonableParser<'a, I, &'a [I]>
   where
     A: 'a, {
-    FuncParser::new(move |parse_context| match self.clone().run(parse_context) {
+    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
       ParseResult::Success {
         parse_context: pc1,
         length,
@@ -28,4 +28,4 @@ where
   }
 }
 
-impl<'a, T, I: 'a, A> CollectParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A> CollectParser<'a, I, A> for T where T: ClonableParser<'a, I, A> + 'a {}

@@ -1,15 +1,15 @@
-use crate::core::{FuncParser, ParseError, ParseResult, Parser};
+use crate::core::{ClonableParser, FnParser, ParseError, ParseResult};
 use std::fmt::Debug;
 
-pub trait ConversionParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
-  fn map_res<B, E, F>(self, f: F) -> impl Parser<'a, I, B>
+pub trait ConversionParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + Sized {
+  fn map_res<B, E, F>(self, f: F) -> impl ClonableParser<'a, I, B>
   where
     Self: Clone + 'a,
     F: Fn(A) -> Result<B, E> + Clone + 'a,
     E: Debug,
     A: 'a,
     B: Clone + 'a, {
-    FuncParser::new(move |parse_state| match self.clone().run(parse_state) {
+    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
       ParseResult::Success {
         parse_context,
         value: a,
@@ -29,12 +29,12 @@ pub trait ConversionParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
     })
   }
 
-  fn map_opt<B, E, F>(self, f: F) -> impl Parser<'a, I, B>
+  fn map_opt<B, E, F>(self, f: F) -> impl ClonableParser<'a, I, B>
   where
     F: Fn(A) -> Option<B> + Clone + 'a,
     A: 'a,
     B: Clone + 'a, {
-    FuncParser::new(move |parse_state| match self.clone().run(parse_state) {
+    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
       ParseResult::Success {
         parse_context,
         value: a,
@@ -55,4 +55,4 @@ pub trait ConversionParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   }
 }
 
-impl<'a, T, I: 'a, A: Clone + 'a> ConversionParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A: Clone + 'a> ConversionParser<'a, I, A> for T where T: ClonableParser<'a, I, A> + 'a {}

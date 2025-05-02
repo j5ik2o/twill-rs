@@ -21,6 +21,6 @@ fnv = "1.0.7"
 [dev-dependencies]
 criterion = "0.5"
 
-[[bench]]
-name = "parser_benchmark"
-harness = false
+#[[bench]]
+#name = "parser_benchmark"
+#harness = false
