@@ -327,22 +327,22 @@ pub fn seq<'a, 'b, I>(seq: &'b [I]) -> impl ClonableParser<'a, I, Vec<I>>
 where
   I: PartialEq + Debug + Clone + 'a,
   'b: 'a, {
-  FnParser::new(move |mut parse_state| {
-    let input = parse_state.input();
+  FnParser::new(move |mut parse_context| {
+    let input = parse_context.input();
     let mut index = 0;
     loop {
       if index == seq.len() {
-        return ParseResult::successful(parse_state, seq.to_vec(), index);
+        return ParseResult::successful(parse_context, seq.to_vec(), index);
       }
       if let Some(str) = input.get(index) {
         if seq[index] != *str {
           let msg = format!("seq {:?} expect: {:?}, found: {:?}", seq, seq[index], str);
-          parse_state.advance_mut(index);
-          let pe = ParseError::of_mismatch(parse_state, index, msg);
+          parse_context.advance_mut(index);
+          let pe = ParseError::of_mismatch(parse_context, index, msg);
           return ParseResult::failed(pe, (index != 0).into());
         }
       } else {
-        return ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_state));
+        return ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context));
       }
       index += 1;
     }
@@ -413,23 +413,23 @@ where
 pub fn tag_no_case<'a, 'b>(tag: &'b str) -> impl ClonableParser<'a, char, String>
 where
   'b: 'a, {
-  FnParser::new(move |parse_state| {
-    let input = parse_state.input();
+  FnParser::new(move |parse_context| {
+    let input = parse_context.input();
     let mut index = 0;
     for c in tag.chars() {
       if let Some(actual) = input.get(index) {
         if !c.eq_ignore_ascii_case(actual) {
           let msg = format!("tag_no_case {:?} expect: {:?}, found: {}", tag, c, actual);
-          let ps = parse_state.advance(index);
+          let ps = parse_context.advance(index);
           let pe = ParseError::of_mismatch(ps, index, msg);
           return ParseResult::failed(pe, (index != 0).into());
         }
       } else {
-        return ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_state));
+        return ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context));
       }
       index += 1;
     }
-    ParseResult::successful(parse_state, tag.to_string(), index)
+    ParseResult::successful(parse_context, tag.to_string(), index)
   })
 }
 /// Returns a [ClonableParser] that parses a string that match a regular expression.

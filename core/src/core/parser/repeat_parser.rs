@@ -114,8 +114,8 @@ where
 
             if let Some(ref sep) = separator {
               // 新しいパースコンテキストを生成（with_same_stateを使用）
-              let sep_parse_state = current_parse_context.with_same_state();
-              let sep_result = sep.clone().run(sep_parse_state);
+              let sep_parse_context = current_parse_context.with_same_state();
+              let sep_result = sep.clone().run(sep_parse_context);
 
               match sep_result {
                 ParseResult::Success {
@@ -138,8 +138,8 @@ where
             }
 
             // 次の要素をパース - 新しいパースコンテキストを生成
-            let next_parse_state = current_parse_context.with_same_state();
-            let next_result = main_parser.clone().run(next_parse_state);
+            let next_parse_context = current_parse_context.with_same_state();
+            let next_result = main_parser.clone().run(next_parse_context);
 
             match next_result {
               ParseResult::Success {

@@ -210,8 +210,8 @@ pub fn take_till0<'a, I, F>(f: F) -> impl ClonableParser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  FnParser::new(move |parse_state| {
-    let input = parse_state.input();
+  FnParser::new(move |parse_context| {
+    let input = parse_context.input();
     let mut index = 0;
     let mut b = false;
     while let Some(c) = input.get(index) {
@@ -222,11 +222,11 @@ where
       index += 1;
     }
     if b {
-      let value = parse_state.slice_with_len(index + 1);
-      ParseResult::successful(parse_state, value, index + 1)
+      let value = parse_context.slice_with_len(index + 1);
+      ParseResult::successful(parse_context, value, index + 1)
     } else {
-      let input = parse_state.input();
-      ParseResult::successful(parse_state, input, input.len())
+      let input = parse_context.input();
+      ParseResult::successful(parse_context, input, input.len())
     }
   })
 }
