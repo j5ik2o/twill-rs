@@ -1,11 +1,11 @@
 use crate::core::element::Element;
-use crate::core::parser::FuncParser;
+use crate::core::parser::FnParser;
 use crate::core::util::Set;
-use crate::core::{ParseContext, ParseError, ParseResult, Parser};
+use crate::core::{ClonableParser, ParseContext, ParseError, ParseResult};
 use regex::Regex;
 use std::fmt::{Debug, Display};
 
-/// Returns a [Parser] that parses the elements that satisfy the specified closure conditions.(for reference)
+/// Returns a [ClonableParser] that parses the elements that satisfy the specified closure conditions.(for reference)
 ///
 /// - f: Closure
 ///
@@ -24,11 +24,11 @@ use std::fmt::{Debug, Display};
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), &input[0]);
 /// ```
-pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> impl ClonableParser<'a, I, &'a I>
 where
   F: Fn(&'a I) -> bool + Clone + 'a,
   I: PartialEq + 'a, {
-  FuncParser::new(move |mut parse_context: ParseContext<'a, I>| {
+  FnParser::new(move |mut parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
     if let Some(actual) = input.get(0) {
       if f(actual) {
@@ -43,7 +43,7 @@ where
   })
 }
 
-/// Returns a [Parser] that parses the specified element.(for reference)
+/// Returns a [ClonableParser] that parses the specified element.(for reference)
 ///
 /// - element: element
 ///
@@ -62,56 +62,56 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(*result.success().unwrap(), input[0]);
 /// ```
-pub fn elm_ref<'a, I>(element: I) -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_ref<'a, I>(element: I) -> impl ClonableParser<'a, I, &'a I>
 where
   I: PartialEq + Clone + 'a, {
   elm_pred_ref(move |actual| *actual == element.clone())
 }
 
-pub fn elm_any_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_any_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(|_| true)
 }
 
-pub fn elm_space_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_space_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_space)
 }
 
-pub fn elm_multi_space_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_multi_space_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_multi_space)
 }
 
-pub fn elm_alpha_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_alpha_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_alpha)
 }
 
-pub fn elm_alpha_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_alpha_digit_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_alpha_digit)
 }
 
-pub fn elm_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_digit_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_digit)
 }
 
-pub fn elm_hex_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_hex_digit_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_hex_digit)
 }
 
-/// Returns a [Parser] that parses oct digits ('0'..='8').(for reference)<br/>
-/// 8進の数字('0'..='8')を解析する[Parser]を返します。(参照版)
+/// Returns a [ClonableParser] that parses oct digits ('0'..='8').(for reference)<br/>
+/// 8進の数字('0'..='8')を解析する[ClonableParser]を返します。(参照版)
 ///
 /// # Example
 ///
@@ -129,13 +129,13 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_oct_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_oct_digit_ref<'a, I>() -> impl ClonableParser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_oct_digit)
 }
 
-/// Returns a [Parser] that parses the elements in the specified set. (for reference)
+/// Returns a [ClonableParser] that parses the elements in the specified set. (for reference)
 ///
 /// - set: element of sets
 ///
@@ -155,12 +155,12 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_of<'a, I, S>(set: &'a S) -> impl Parser<'a, I, &'a I>
+pub fn elm_ref_of<'a, I, S>(set: &'a S) -> impl ClonableParser<'a, I, &'a I>
 where
   I: PartialEq + Display + Clone + 'a,
   S: Set<I> + ?Sized, {
   let set_ptr = set as *const S;
-  FuncParser::new(move |mut parse_context| {
+  FnParser::new(move |mut parse_context| {
     let set = unsafe { &*set_ptr };
     let input = parse_context.input();
     if let Some(s) = input.get(0) {
@@ -178,7 +178,7 @@ where
   })
 }
 
-/// Returns a [Parser] that parses the elements in the specified range. (for reference)
+/// Returns a [ClonableParser] that parses the elements in the specified range. (for reference)
 ///
 /// - start: start element
 /// - end: end element
@@ -199,10 +199,10 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_in<'a, I>(start: I, end: I) -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_ref_in<'a, I>(start: I, end: I) -> impl ClonableParser<'a, I, &'a I>
 where
   I: PartialEq + PartialOrd + Display + Clone + 'a, {
-  FuncParser::new(move |mut parse_context| {
+  FnParser::new(move |mut parse_context| {
     let input = parse_context.input();
     if let Some(s) = input.get(0) {
       if *s >= start && *s <= end {
@@ -219,7 +219,7 @@ where
   })
 }
 
-/// Returns a [Parser] that parses the elements in the specified range. (for reference)
+/// Returns a [ClonableParser] that parses the elements in the specified range. (for reference)
 ///
 /// - start: a start element
 /// - end: an end element, process up to the element at end - 1
@@ -240,11 +240,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_from_until<'a, I>(start: I, end: I) -> impl Parser<'a, I, &'a I> + Clone
+pub fn elm_ref_from_until<'a, I>(start: I, end: I) -> impl ClonableParser<'a, I, &'a I>
 where
   I: PartialEq + PartialOrd + Display + Clone + 'a, {
   // クローン可能なパーサーを実装
-  FuncParser::new(move |mut parse_context| {
+  FnParser::new(move |mut parse_context| {
     let input = parse_context.input();
     if let Some(s) = input.get(0) {
       if *s >= start && *s < end {
@@ -261,7 +261,7 @@ where
   })
 }
 
-/// Returns a [Parser] that parses elements that do not contain elements of the specified set.(for reference)
+/// Returns a [ClonableParser] that parses elements that do not contain elements of the specified set.(for reference)
 ///
 /// - set: a element of sets
 ///
@@ -281,12 +281,12 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn none_ref_of<'a, I, S>(set: &'a S) -> impl Parser<'a, I, &'a I> + Clone
+pub fn none_ref_of<'a, I, S>(set: &'a S) -> impl ClonableParser<'a, I, &'a I>
 where
   I: PartialEq + Display + Clone + 'a,
   S: Set<I> + ?Sized, {
   let set_ptr = set as *const S;
-  FuncParser::new(move |mut parse_context| {
+  FnParser::new(move |mut parse_context| {
     let set = unsafe { &*set_ptr };
     let input = parse_context.input();
     if let Some(s) = input.get(0) {
@@ -304,8 +304,8 @@ where
   })
 }
 
-/// Returns a [Parser] that parses a sequence of elements.<br/>
-/// 要素の列を解析する[Parser]を返す。
+/// Returns a [ClonableParser] that parses a sequence of elements.<br/>
+/// 要素の列を解析する[ClonableParser]を返す。
 ///
 /// # Example
 ///
@@ -323,11 +323,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn seq<'a, 'b, I>(seq: &'b [I]) -> impl Parser<'a, I, Vec<I>>
+pub fn seq<'a, 'b, I>(seq: &'b [I]) -> impl ClonableParser<'a, I, Vec<I>>
 where
   I: PartialEq + Debug + Clone + 'a,
   'b: 'a, {
-  FuncParser::new(move |mut parse_state| {
+  FnParser::new(move |mut parse_state| {
     let input = parse_state.input();
     let mut index = 0;
     loop {
@@ -349,7 +349,7 @@ where
   })
 }
 
-/// Returns a [Parser] that parses a string.
+/// Returns a [ClonableParser] that parses a string.
 ///
 /// - tag: a string
 ///
@@ -368,10 +368,10 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn tag<'a, 'b>(tag: &'b str) -> impl Parser<'a, char, String>
+pub fn tag<'a, 'b>(tag: &'b str) -> impl ClonableParser<'a, char, String>
 where
   'b: 'a, {
-  FuncParser::new(move |mut parse_context| {
+  FnParser::new(move |mut parse_context| {
     let input: &[char] = parse_context.input();
     let mut index = 0;
     for c in tag.chars() {
@@ -391,7 +391,7 @@ where
   })
 }
 
-/// Returns a [Parser] that parses a string. However, it is not case-sensitive.
+/// Returns a [ClonableParser] that parses a string. However, it is not case-sensitive.
 ///
 /// - tag: a string
 ///
@@ -410,10 +410,10 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn tag_no_case<'a, 'b>(tag: &'b str) -> impl Parser<'a, char, String>
+pub fn tag_no_case<'a, 'b>(tag: &'b str) -> impl ClonableParser<'a, char, String>
 where
   'b: 'a, {
-  FuncParser::new(move |parse_state| {
+  FnParser::new(move |parse_state| {
     let input = parse_state.input();
     let mut index = 0;
     for c in tag.chars() {
@@ -432,7 +432,7 @@ where
     ParseResult::successful(parse_state, tag.to_string(), index)
   })
 }
-/// Returns a [Parser] that parses a string that match a regular expression.
+/// Returns a [ClonableParser] that parses a string that match a regular expression.
 ///
 /// - pattern: a regular expression
 ///
@@ -451,14 +451,14 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn regex<'a>(pattern: &str) -> impl Parser<'a, char, String> {
+pub fn regex<'a>(pattern: &str) -> impl ClonableParser<'a, char, String> {
   let pattern = if !pattern.starts_with("^") {
     format!("^{}", pattern)
   } else {
     pattern.to_string()
   };
   let regex = Regex::new(&pattern).unwrap();
-  FuncParser::new(move |parse_context| {
+  FnParser::new(move |parse_context| {
     let input: &[char] = parse_context.input();
     log::debug!("regex: input = {:?}", input);
     let str = String::from_iter(input);
@@ -481,7 +481,7 @@ pub fn regex<'a>(pattern: &str) -> impl Parser<'a, char, String> {
 mod tests {
   use crate::core::parser::combinators::elm_ref_in;
   use crate::core::parser::rc_parser::reusable_parser;
-  use crate::core::Parser;
+  use crate::core::{ClonableParser, Parser};
 
   #[test]
   fn test_elm_ref_in() {

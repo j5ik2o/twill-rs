@@ -1,9 +1,9 @@
-use crate::core::parser::FuncParser;
-use crate::core::{ParseContext, ParseError, ParseResult, Parser};
+use crate::core::parser::FnParser;
+use crate::core::{ClonableParser, ParseContext, ParseError, ParseResult};
 
 // Parser that matches a specific string
-pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str> {
-  FuncParser::new(move |mut parse_context: ParseContext<'a, char>| {
+pub fn string<'a>(expected: &'static str) -> impl ClonableParser<'a, char, &'static str> {
+  FnParser::new(move |mut parse_context: ParseContext<'a, char>| {
     let input = parse_context.input();
     let expected_chars: Vec<char> = expected.chars().collect();
     if input.len() >= expected_chars.len() && input[..expected_chars.len()] == expected_chars[..] {
@@ -18,8 +18,8 @@ pub fn string<'a>(expected: &'static str) -> impl Parser<'a, char, &'static str>
 }
 
 // Parser that matches any character
-pub fn any_char<'a>() -> impl Parser<'a, char, char> {
-  FuncParser::new(move |mut parse_context: ParseContext<'a, char>| {
+pub fn any_char<'a>() -> impl ClonableParser<'a, char, char> {
+  FnParser::new(move |mut parse_context: ParseContext<'a, char>| {
     let input = parse_context.input();
     if let Some(&c) = input.get(0) {
       parse_context.next_mut();
@@ -31,8 +31,8 @@ pub fn any_char<'a>() -> impl Parser<'a, char, char> {
 }
 
 // Parser that matches one of the given characters
-pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
-  FuncParser::new(move |mut parse_context: ParseContext<'a, char>| {
+pub fn one_of<'a>(chars: &'static [char]) -> impl ClonableParser<'a, char, char> {
+  FnParser::new(move |mut parse_context: ParseContext<'a, char>| {
     let input = parse_context.input();
     if let Some(&c) = input.get(0) {
       if chars.contains(&c) {
@@ -52,6 +52,7 @@ pub fn one_of<'a>(chars: &'static [char]) -> impl Parser<'a, char, char> {
 mod tests {
   use super::*;
   use crate::core::CommittedStatus;
+  use crate::core::Parser;
 
   // Helper function to create a ParseContext
   fn create_context(s: &'static str) -> ParseContext<'static, char> {

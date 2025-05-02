@@ -1,6 +1,6 @@
-use crate::core::{FuncParser, ParseError, ParseResult, Parser};
+use crate::core::{ClonableParser, FnParser, ParseError, ParseResult};
 
-/// Returns a [Parser] that skips the specified number of elements.
+/// Returns a [ClonableParser] that skips the specified number of elements.
 ///
 /// - size: a size of elements
 ///
@@ -22,8 +22,8 @@ use crate::core::{FuncParser, ParseError, ParseResult, Parser};
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "def");
 /// ```
-pub fn skip<'a, I: Clone + 'a>(n: usize) -> impl Parser<'a, I, ()> {
-  FuncParser::new(move |parse_context| {
+pub fn skip<'a, I: Clone + 'a>(n: usize) -> impl ClonableParser<'a, I, ()> {
+  FnParser::new(move |parse_context| {
     let input = parse_context.input();
     if input.len() >= n {
       ParseResult::successful(parse_context, (), n)

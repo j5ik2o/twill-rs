@@ -1,5 +1,5 @@
-use crate::core::parser::FuncParser;
-use crate::core::{ParseError, ParseResult, Parser};
+use crate::core::parser::FnParser;
+use crate::core::{ClonableParser, ParseError, ParseResult};
 use std::fmt::Display;
 
 #[derive(Debug, Clone)]
@@ -10,13 +10,13 @@ pub enum LogLevel {
   Err,
 }
 
-pub trait LoggingParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
+pub trait LoggingParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn name(self, name: &'a str) -> impl Parser<'a, I, A>
+  fn name(self, name: &'a str) -> impl ClonableParser<'a, I, A>
   where
     A: Clone + 'a, {
-    FuncParser::new(
+    FnParser::new(
       move |parse_context| match self.clone().run(parse_context.with_same_state()) {
         res @ ParseResult::Success { .. } => res,
         ParseResult::Failure {
@@ -37,10 +37,10 @@ where
     )
   }
 
-  fn expect(self, name: &'a str) -> impl Parser<'a, I, A>
+  fn expect(self, name: &'a str) -> impl ClonableParser<'a, I, A>
   where
     A: Clone + 'a, {
-    FuncParser::new(
+    FnParser::new(
       move |parse_context| match self.clone().run(parse_context.with_same_state()) {
         res @ ParseResult::Success { .. } => res,
         ParseResult::Failure {
@@ -54,12 +54,12 @@ where
     )
   }
 
-  fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> impl Parser<'a, I, A>
+  fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> impl ClonableParser<'a, I, A>
   where
     A: Clone + 'a,
     F: Fn(&ParseResult<'a, I, A>) -> B + Clone + 'a,
     B: Display + 'a, {
-    FuncParser::new(move |parse_context| {
+    FnParser::new(move |parse_context| {
       let pr = self.clone().run(parse_context);
       let s = format!("{} = {}", name, f(&pr));
       match log_level {
@@ -73,4 +73,4 @@ where
   }
 }
 
-impl<'a, T, I: 'a, A: Clone + 'a> LoggingParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A: Clone + 'a> LoggingParser<'a, I, A> for T where T: ClonableParser<'a, I, A> + 'a {}

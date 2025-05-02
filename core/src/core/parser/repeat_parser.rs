@@ -1,16 +1,16 @@
 use crate::core::committed_status::CommittedStatus;
 use crate::core::parser::rc_parser::reusable_parser;
-use crate::core::parser::FuncParser;
-use crate::core::parser::{BinaryOperatorParser, ParseResult, Parser, ParserMonad};
+use crate::core::parser::FnParser;
+use crate::core::parser::{BinaryOperatorParser, ClonableParser, ParseResult, ParserMonad};
 use crate::core::util::{Bound, RangeArgument};
-use crate::core::ParseError;
+use crate::core::{ParseError, Parser};
 
 // 基本的なRepeatParserトレイト - Clone制約を追加
-pub trait RepeatParser<'a, I: 'a, A>: Parser<'a, I, A> + BinaryOperatorParser<'a, I, A> + Sized + Clone
+pub trait RepeatParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + BinaryOperatorParser<'a, I, A>
 where
   Self: 'a, {
   // 基本的な繰り返しパーサー - セパレーターなし
-  fn repeat<R>(self, range: R) -> impl Parser<'a, I, Vec<A>>
+  fn repeat<R>(self, range: R) -> impl ClonableParser<'a, I, Vec<A>>
   where
     R: RangeArgument<usize> + Clone + 'a,
     A: Clone + 'a, {
@@ -19,7 +19,7 @@ where
   }
 
   // セパレーターなしでの0回以上の繰り返し
-  fn of_many0(self) -> impl Parser<'a, I, Vec<A>>
+  fn of_many0(self) -> impl ClonableParser<'a, I, Vec<A>>
   where
     A: Clone + 'a, {
     let none_separator: Option<Self> = None;
@@ -27,7 +27,7 @@ where
   }
 
   // セパレーターなしでの1回以上の繰り返し
-  fn of_many1(self) -> impl Parser<'a, I, Vec<A>>
+  fn of_many1(self) -> impl ClonableParser<'a, I, Vec<A>>
   where
     A: Clone + 'a, {
     let none_separator: Option<Self> = None;
@@ -35,7 +35,7 @@ where
   }
 
   // 指定回数の繰り返し
-  fn count(self, count: usize) -> impl Parser<'a, I, Vec<A>>
+  fn count(self, count: usize) -> impl ClonableParser<'a, I, Vec<A>>
   where
     A: Clone + 'a, {
     let none_separator: Option<Self> = None;
@@ -43,30 +43,30 @@ where
   }
 
   // セパレーターありでの0回以上の繰り返し
-  fn of_many0_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
+  fn of_many0_sep<P2, B>(self, separator: P2) -> impl ClonableParser<'a, I, Vec<A>>
   where
-    P2: Parser<'a, I, B> + Clone + 'a,
+    P2: ClonableParser<'a, I, B> + 'a,
     A: Clone + 'a,
     B: Clone + 'a, {
     self.repeat_sep(0.., Some(separator))
   }
 
   // セパレーターありでの1回以上の繰り返し
-  fn of_many1_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
+  fn of_many1_sep<P2, B>(self, separator: P2) -> impl ClonableParser<'a, I, Vec<A>>
   where
-    P2: Parser<'a, I, B> + Clone + 'a,
+    P2: ClonableParser<'a, I, B> + 'a,
     A: Clone + 'a,
     B: Clone + 'a, {
     self.repeat_sep(1.., Some(separator))
   }
 
   // 任意範囲の繰り返し（セパレーターオプション付き）
-  fn repeat_sep<P2, B, R>(self, range: R, separator_opt: Option<P2>) -> impl Parser<'a, I, Vec<A>>
+  fn repeat_sep<P2, B, R>(self, range: R, separator_opt: Option<P2>) -> impl ClonableParser<'a, I, Vec<A>>
   where
     R: RangeArgument<usize> + Clone + 'a,
     A: Clone + 'a,
     B: Clone + 'a,
-    P2: Parser<'a, I, B> + 'a, {
+    P2: ClonableParser<'a, I, B> + 'a, {
     let parser_clone = self.clone();
     let main_parser_factory = move || parser_clone.clone();
     let main_parser = reusable_parser(main_parser_factory);
@@ -78,7 +78,7 @@ where
 
     let range_capture = range;
 
-    FuncParser::new(move |parse_context| {
+    FnParser::new(move |parse_context| {
       let mut all_length = 0;
       let mut items = vec![];
       let range = &range_capture;
@@ -191,7 +191,7 @@ where
 }
 
 // Cloneを実装したパーサーに対してCloneableRepeaterを実装
-impl<'a, T, I: 'a, A> RepeatParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + Clone + 'a {}
+impl<'a, T, I: 'a, A> RepeatParser<'a, I, A> for T where T: ClonableParser<'a, I, A> + ParserMonad<'a, I, A> {}
 
 #[cfg(test)]
 mod tests {

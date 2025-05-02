@@ -3,7 +3,8 @@ use std::rc::Rc;
 
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
-use crate::core::parser::Parser;
+use crate::core::parser::ClonableParser;
+use crate::core::Parser;
 
 /// A wrapper that makes any parser cloneable using reference counting
 pub struct RcParser<'a, I: 'a, A, F>
@@ -36,7 +37,7 @@ pub fn reusable_parser<'a, I: 'a, A, P, F>(
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where
   F: Fn() -> P + 'a,
-  P: Parser<'a, I, A>, {
+  P: ClonableParser<'a, I, A>, {
   // factoryをRcでラップして共有
   let factory_rc = Rc::new(factory);
 
@@ -54,7 +55,7 @@ pub fn reusable_with_clone<'a, I: 'a, A, P>(
   parser: P,
 ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
 where
-  P: Parser<'a, I, A>, {
+  P: ClonableParser<'a, I, A>, {
   // クローン可能なパーサーを利用
   let parser_clone = parser;
 
@@ -68,7 +69,7 @@ pub fn reusable_parser_opt<'a, I: 'a, A: 'a, P, F>(
 ) -> Option<RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>>
 where
   F: Fn() -> P + 'a,
-  P: Parser<'a, I, A>, {
+  P: ClonableParser<'a, I, A>, {
   match factory_opt {
     Some(f) => Some(reusable_parser(f)),
     None => None,
@@ -80,7 +81,7 @@ pub fn reusable_with_clone_opt<'a, I: 'a, A, P>(
   parser_opt: Option<P>,
 ) -> Option<RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>>
 where
-  P: Parser<'a, I, A> + Clone + 'a, {
+  P: ClonableParser<'a, I, A> + 'a, {
   parser_opt.map(reusable_with_clone)
 }
 
@@ -104,4 +105,9 @@ where
       _phantom: PhantomData,
     }
   }
+}
+
+impl<'a, I: 'a, A: Clone + 'a, F> ClonableParser<'a, I, A> for RcParser<'a, I, A, F> where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a
+{
 }

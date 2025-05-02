@@ -1,12 +1,12 @@
 use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
-use crate::core::parser::{FuncParser, Parser};
+use crate::core::parser::{ClonableParser, FnParser};
 use crate::core::successful;
 
 /// Trait providing parser transformation methods
-pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
+pub trait ParserMonad<'a, I: 'a, A>: ClonableParser<'a, I, A> {
   /// Transform success result
-  fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
+  fn map<F, B>(self, f: F) -> impl ClonableParser<'a, I, B>
   where
     Self: 'a,
     A: Clone + 'a,
@@ -16,13 +16,13 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
   }
 
   /// Chain parsers
-  fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
+  fn flat_map<F, P, B>(self, f: F) -> impl ClonableParser<'a, I, B>
   where
     Self: 'a,
     B: Clone + 'a,
-    P: Parser<'a, I, B> + 'a,
+    P: ClonableParser<'a, I, B> + 'a,
     F: Fn(A) -> P + Clone + 'a, {
-    FuncParser::new(
+    FnParser::new(
       move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success {
           parse_context,
@@ -38,12 +38,12 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
   }
 
   /// Filter parser results based on a predicate
-  fn with_filter<F>(self, f: F) -> impl Parser<'a, I, A>
+  fn with_filter<F>(self, f: F) -> impl ClonableParser<'a, I, A>
   where
     Self: 'a,
     A: Clone + 'a,
     F: Fn(&A) -> bool + Clone + 'a, {
-    FuncParser::new(
+    FnParser::new(
       move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
         ParseResult::Success {
           parse_context,
@@ -66,4 +66,4 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> + Sized + Clone {
 }
 
 /// Provide extension methods to all parsers
-impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: Parser<'a, I, A> + Clone {}
+impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: ClonableParser<'a, I, A> {}

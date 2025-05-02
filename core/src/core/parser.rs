@@ -32,8 +32,7 @@ pub use repeat_parser::*;
 pub use skip_parser::*;
 pub use transform_parser::*;
 
-/// Basic parser trait
-pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
+pub trait Parser<'a, I: 'a, A>: Sized + 'a {
   fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
   fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A>
@@ -44,41 +43,50 @@ pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
   }
 }
 
-// Parserを参照として実装できるようにするためのヘルパートレイト
-pub trait ParserRef<'a, I: 'a, A> {
-  fn run_ref(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
-}
+/// Basic parser trait
+pub trait ClonableParser<'a, I: 'a, A>: Parser<'a, I, A> + Clone + Sized + 'a {}
 
-// Cloneを実装したParserに対して、参照からの実行を可能にする
-impl<'a, P, I: 'a, A> ParserRef<'a, I, A> for P
+pub(crate) struct FnOnceParser<'a, I: 'a, A, F>
 where
-  P: Parser<'a, I, A> + Clone,
-{
-  fn run_ref(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
-    self.clone().run(parse_context)
-  }
-}
-
-pub(crate) struct FuncParser<'a, I: 'a, A, F>
-where
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
+  F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: F,
   _phantom: PhantomData<(&'a I, A)>,
 }
 
-impl<'a, I: 'a, A, F> FuncParser<'a, I, A, F>
+impl<'a, I: 'a, A, F> FnOnceParser<'a, I, A, F>
 where
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  F: FnOnce(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
   pub(crate) fn new(parser_fn: F) -> Self {
-    FuncParser {
+    Self {
       parser_fn,
       _phantom: PhantomData,
     }
   }
 }
 
-impl<'a, I, A, F> Parser<'a, I, A> for FuncParser<'a, I, A, F>
+// ---
+
+pub(crate) struct FnParser<'a, I: 'a, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
+  parser_fn: F,
+  _phantom: PhantomData<(&'a I, A)>,
+}
+
+impl<'a, I: 'a, A, F> FnParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
+  pub(crate) fn new(parser_fn: F) -> Self {
+    Self {
+      parser_fn,
+      _phantom: PhantomData,
+    }
+  }
+}
+
+impl<'a, I, A, F> Parser<'a, I, A> for FnParser<'a, I, A, F>
 where
   A: Clone + 'a,
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
@@ -88,14 +96,19 @@ where
   }
 }
 
-impl<'a, I, A, F> Clone for FuncParser<'a, I, A, F>
+impl<'a, I, A, F> Clone for FnParser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
 {
   fn clone(&self) -> Self {
-    FuncParser {
+    FnParser {
       parser_fn: self.parser_fn.clone(),
       _phantom: PhantomData,
     }
   }
+}
+
+impl<'a, I: 'a, A: Clone + 'a, F> ClonableParser<'a, I, A> for FnParser<'a, I, A, F> where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a
+{
 }
