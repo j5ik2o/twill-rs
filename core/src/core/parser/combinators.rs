@@ -10,13 +10,13 @@ use crate::core::parse_context::ParseContext;
 use crate::core::parse_result::ParseResult;
 use crate::core::parser::rc_parser::reusable_parser;
 use crate::core::parser::{ClonableParser, FnParser};
-use crate::core::{CommittedStatus, FnOnceParser, ParseError, Parser, SkipParser};
+use crate::core::{CommittedStatus, ParseError, SkipParser};
 use std::fmt::Display;
 
-pub fn end<'a, I: 'a>() -> impl Parser<'a, I, ()>
+pub fn end<'a, I: 'a>() -> impl ClonableParser<'a, I, ()>
 where
   I: Display, {
-  FnOnceParser::new(move |mut parse_context: ParseContext<'a, I>| {
+  FnParser::new(move |mut parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
     if let Some(actual) = input.get(0) {
       let msg = format!("expect end of input, found: {}", actual);
