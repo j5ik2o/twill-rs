@@ -14,9 +14,9 @@ where
   /// alias: p1 * p2 = p1.skip_left(p2)
   fn skip_left<P2, B>(&'a self, p2: &'a P2) -> impl Parser<'a, I, B>
   where
-    A: Clone + 'a,
+    A: 'a,
     B: Clone + 'a,
-    P2: Parser<'a, I, B> + Clone + 'a, {
+    P2: Parser<'a, I, B> + 'a, {
     self.and_then(p2).map(move |(_, b)| b.clone())
   }
 
@@ -25,8 +25,8 @@ where
   fn skip_right<B, P2>(&'a self, p2: &'a P2) -> impl Parser<'a, I, A>
   where
     A: Clone + 'a,
-    B: Clone + 'a,
-    P2: Parser<'a, I, B> + Clone + 'a, {
+    B: 'a,
+    P2: Parser<'a, I, B> + 'a, {
     self.and_then(p2).map(move |(a, _)| a.clone())
   }
 }
