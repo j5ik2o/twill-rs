@@ -1,8 +1,8 @@
 use crate::parse_context::ParseContext;
 use crate::parse_error::ParseError;
 use crate::parse_result::ParseResult;
+use crate::parser::parser_monad::ParserMonad;
 use crate::parser::{Parser, RcParser};
-use crate::parser_monad::ParserMonad;
 
 /// Trait providing result transformation operations for parsers
 pub trait TransformParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized

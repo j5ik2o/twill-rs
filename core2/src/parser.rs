@@ -3,6 +3,20 @@ use crate::parse_result::ParseResult;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+mod and_then_parser;
+mod attempt_parser;
+mod collect_parser;
+pub mod parser_monad;
+mod skip_parser;
+mod transform_parser;
+
+pub use and_then_parser::*;
+pub use attempt_parser::*;
+pub use collect_parser::*;
+pub use parser_monad::*;
+pub use skip_parser::*;
+pub use transform_parser::*;
+
 // Add Sized constraint here, as Parser methods take &self, but Monad methods will take self
 pub trait Parser<'a, I: 'a, A>: Sized + 'a {
   fn run(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;

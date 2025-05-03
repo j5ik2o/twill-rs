@@ -1,5 +1,5 @@
+use crate::parser::parser_monad::ParserMonad;
 use crate::parser::{successful, Parser};
-use crate::parser_monad::ParserMonad;
 
 /// Trait providing sequence-related parser operations (consuming self)
 pub trait AndThenParser<'a, I: 'a, A>: ParserMonad<'a, I, A> {

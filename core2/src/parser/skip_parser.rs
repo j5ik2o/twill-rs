@@ -1,8 +1,8 @@
-use crate::and_then_parser::AndThenParser;
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
+use crate::parser::and_then_parser::AndThenParser;
+use crate::parser::parser_monad::ParserMonad;
 use crate::parser::{Parser, RcParser};
-use crate::parser_monad::ParserMonad;
 use std::ops::{Mul, Sub};
 
 /// Trait providing sequence-related parser operations
