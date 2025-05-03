@@ -16,7 +16,7 @@ where
   }
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
-  fn not(&'a self) -> impl Parser<'a, I, ()> {
+  fn not(self) -> impl Parser<'a, I, ()> {
     RcParser::new(
       move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success { parse_context, .. } => {

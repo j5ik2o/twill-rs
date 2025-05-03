@@ -5,14 +5,13 @@ use crate::parser::{Parser, RcParser}; // successful は不要に // ParseResult
 /// Trait providing sequence-related parser operations (consuming self)
 pub trait AndThenParser<'a, I: 'a, A>: ParserMonad<'a, I, A> {
   /// Sequential parser (conjunction) - implemented directly using RcParser (consuming self)
-  fn and_then<P2, B>(&'a self, p2: &'a P2) -> impl Parser<'a, I, (A, B)>
+  fn and_then<P2, B>(self, p2: &'a P2) -> impl Parser<'a, I, (A, B)> // Changed to take self
   where
-    Self: 'a,
     A: 'a,
     B: 'a,
     P2: Parser<'a, I, B> + 'a, {
     RcParser::new(move |parse_context1| {
-      match self.run(parse_context1) {
+      match self.run(parse_context1) { // self.run takes &self, so this works
         ParseResult::Success {
           parse_context: parse_context2, // Renamed to avoid shadowing
           value: a,
