@@ -31,10 +31,6 @@ pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A) -> impl Parser<'a, I, A> {
   RcParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value.clone(), 0))
 }
 
-pub fn successful_ref<'a, I: 'a, A: 'a>(value: &'a A) -> impl Parser<'a, I, &'a A> {
-  RcParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value, 0))
-}
-
 // --- RcParser (Try without changes first) ---
 
 pub struct RcParser<'a, I: 'a, A, F>
