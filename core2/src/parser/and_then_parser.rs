@@ -10,27 +10,24 @@ pub trait AndThenParser<'a, I: 'a, A>: ParserMonad<'a, I, A> {
     Self: 'a,
     A: 'a,
     B: 'a,
-    P2: Parser<'a, I, B> + 'a,
-  {
+    P2: Parser<'a, I, B> + 'a, {
     RcParser::new(move |parse_context1| {
       match self.run(parse_context1) {
         ParseResult::Success {
           parse_context: parse_context2, // Renamed to avoid shadowing
           value: a,
           length: length1,
-        } => {
-          match p2.run(parse_context2.advance(length1)) {
-            ParseResult::Success {
-              parse_context: parse_context3,
-              value: b, 
-              length: length2,
-            } => ParseResult::successful(parse_context3, (a, b), length1 + length2),
-            ParseResult::Failure {
-              error,
-              committed_status,
-            } => ParseResult::failed(error, committed_status),
-          }
-        }
+        } => match p2.run(parse_context2.advance(length1)) {
+          ParseResult::Success {
+            parse_context: parse_context3,
+            value: b,
+            length: length2,
+          } => ParseResult::successful(parse_context3, (a, b), length1 + length2),
+          ParseResult::Failure {
+            error,
+            committed_status,
+          } => ParseResult::failed(error, committed_status),
+        },
         ParseResult::Failure {
           error,
           committed_status,

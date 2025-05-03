@@ -9,7 +9,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
     Self: 'a,
     A: 'a,
     B: Clone + 'a,
-    F: Fn(A) -> B + 'a {
+    F: Fn(A) -> B + 'a, {
     self.flat_map(move |a| successful(f(a)))
   }
 
@@ -20,7 +20,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
     A: 'a,
     B: 'a,
     P: Parser<'a, I, B> + 'a,
-    F: Fn(A) -> P + 'a {
+    F: Fn(A) -> P + 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         parse_context,
@@ -36,8 +36,4 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
 }
 
 /// Provide extension methods to all parsers
-impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T
-where
-  T: Parser<'a, I, A> + 'a,
-{
-}
+impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
