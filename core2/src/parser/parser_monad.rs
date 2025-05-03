@@ -9,8 +9,9 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
     Self: 'a, // Sized moved to Parser trait
     A: 'a,
     B: Clone + 'a,
-    // F is moved, 'a might be unnecessary? Clone is unnecessary.
-    F: Fn(A) -> B + 'a; // Try with Fn first
+    F: Fn(A) -> B + 'a {
+    self.flat_map(move |a| successful(f(a)))
+  }
 
   /// Chain parsers (consuming self)
   fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
@@ -19,31 +20,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
     A: 'a,
     B: 'a,
     P: Parser<'a, I, B> + 'a,
-    // F is moved, 'a might be unnecessary? Clone is unnecessary.
-    F: Fn(A) -> P + 'a; // Try with Fn first
-}
-
-/// Provide extension methods to all parsers
-impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T
-where
-  T: Parser<'a, I, A> + 'a,
-{
-  fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
-  where
-    Self: 'a,
-    A: 'a,
-    B: Clone + 'a,
-    F: Fn(A) -> B + 'a, {
-    self.flat_map(move |a| successful(f(a))) // f is moved
-  }
-
-  fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
-  where
-    Self: 'a,
-    A: 'a,
-    B: 'a,
-    P: Parser<'a, I, B> + 'a,
-    F: Fn(A) -> P + 'a, {
+    F: Fn(A) -> P + 'a {
     RcParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         parse_context,
@@ -56,4 +33,11 @@ where
       } => ParseResult::failed(error, committed_status),
     })
   }
+}
+
+/// Provide extension methods to all parsers
+impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T
+where
+  T: Parser<'a, I, A> + 'a,
+{
 }
