@@ -23,7 +23,7 @@ pub trait ParserMonad<'a, I: 'a, A>: ClonableParser<'a, I, A> {
     P: ClonableParser<'a, I, B> + 'a,
     F: Fn(A) -> P + Clone + 'a, {
     FnParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success {
           parse_context,
           value,
@@ -44,7 +44,7 @@ pub trait ParserMonad<'a, I: 'a, A>: ClonableParser<'a, I, A> {
     A: Clone + 'a,
     F: Fn(&A) -> bool + Clone + 'a, {
     FnParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success {
           parse_context,
           value,

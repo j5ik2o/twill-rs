@@ -32,7 +32,7 @@ where
   A: 'a,
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
-  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
+  fn run(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A> {
     (self.parser_fn)(parse_context)
   }
 }

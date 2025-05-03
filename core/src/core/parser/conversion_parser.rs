@@ -9,7 +9,7 @@ pub trait ConversionParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + Sized {
     E: Debug,
     A: 'a,
     B: Clone + 'a, {
-    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
+    FnParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         parse_context,
         value: a,
@@ -34,7 +34,7 @@ pub trait ConversionParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + Sized {
     F: Fn(A) -> Option<B> + Clone + 'a,
     A: 'a,
     B: Clone + 'a, {
-    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
+    FnParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         parse_context,
         value: a,

@@ -7,7 +7,7 @@ where
   fn attempt(self) -> impl ClonableParser<'a, I, A>
   where
     A: Clone + 'a, {
-    FnParser::new(move |parse_context: ParseContext<'a, I>| self.clone().run(parse_context).with_uncommitted())
+    FnParser::new(move |parse_context: ParseContext<'a, I>| self.run(parse_context).with_uncommitted())
   }
 }
 

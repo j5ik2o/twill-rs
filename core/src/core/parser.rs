@@ -34,9 +34,9 @@ pub use skip_parser::*;
 pub use transform_parser::*;
 
 pub trait Parser<'a, I: 'a, A>: Sized + 'a {
-  fn run(self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
+  fn run(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
-  fn parse(self, input: &'a [I]) -> ParseResult<'a, I, A> {
+  fn parse(&self, input: &'a [I]) -> ParseResult<'a, I, A> {
     let parse_context = ParseContext::new(input, 0);
     self.run(parse_context)
   }

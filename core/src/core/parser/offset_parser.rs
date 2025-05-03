@@ -5,7 +5,7 @@ pub trait OffsetParser<'a, I: 'a, A>: ClonableParser<'a, I, A> + Sized
 where
   Self: 'a, {
   fn last_offset(self) -> impl ClonableParser<'a, I, usize> {
-    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
+    FnParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         mut parse_context,
         length,
@@ -23,7 +23,7 @@ where
   }
 
   fn offset(self) -> impl ClonableParser<'a, I, usize> {
-    FnParser::new(move |parse_context| match self.clone().run(parse_context) {
+    FnParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         mut parse_context,
         length,

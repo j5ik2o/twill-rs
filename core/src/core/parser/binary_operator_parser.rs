@@ -64,14 +64,14 @@ where
       A: Clone + 'a,
       OP: Fn(A, A) -> A + Clone + 'a, {
       let default_value = x.clone();
-      FnParser::new(move |parse_context| match op_rc_parser.clone().run(parse_context) {
+      FnParser::new(move |parse_context| match op_rc_parser.run(parse_context) {
         ParseResult::Success {
           parse_context: mut pc1,
           value: f,
           length: n1,
         } => {
           pc1.advance_mut(n1);
-          (match rc_parser.clone().run(pc1) {
+          (match rc_parser.run(pc1) {
             ParseResult::Success {
               parse_context: mut pc2,
               value: y,

@@ -22,7 +22,7 @@ where
     P: ClonableParser<'a, I, A> + 'a,
     F: Fn() -> P + Clone + 'a, {
     FnParser::new(
-      move |parse_context: ParseContext<'a, I>| match self.clone().run(parse_context) {
+      move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         pr @ ParseResult::Failure {
           committed_status: CommittedStatus::Uncommitted,
           ..
