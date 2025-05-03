@@ -1,9 +1,10 @@
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::and_then_parser::AndThenParser;
+// use crate::parser::and_then_parser::AndThenParser; // Directly used AndThenParser is not needed if using flat_map
 use crate::parser::parser_monad::ParserMonad;
 use crate::parser::{Parser, RcParser};
 use std::ops::{Mul, Sub};
+use crate::parser::and_then_parser::AndThenParser;
 
 /// Trait providing sequence-related parser operations
 pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized
@@ -34,34 +35,67 @@ where
 impl<'a, T, I: 'a, A> SkipParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + 'a {}
 
 // alias: p1 * p2 = p1.skip_left(p2)
-// impl<'a, I: 'a, F, G, A, B> Mul<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
-// where
-//   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
-//   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + Clone + 'a,
-//   A: Clone + 'a,
-//   B: Clone + 'a,
-// {
-//   type Output = impl Parser<'a, I, B>;
-//
-//   fn mul(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
-//     self.skip_left(rhs)
-//   }
-// }
+impl<'a, I: 'a, F, G, A, B> Mul<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
+  A: 'a,
+  B: Clone + 'a,
+{
+  type Output = impl Parser<'a, I, B>;
+
+  fn mul(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
+    self.flat_map(move |_a| {
+        let rhs_clone = rhs.clone();
+        RcParser::new(move |ctx: ParseContext<'a, I>| {
+            match rhs_clone.run(ctx) {
+                ParseResult::Success {
+                    parse_context: next_ctx,
+                    value: b,
+                    length,
+                } => {
+                    ParseResult::successful(next_ctx, b.clone(), length)
+                }
+                ParseResult::Failure { error, committed_status } => {
+                    ParseResult::failed(error, committed_status)
+                }
+            }
+        })
+    })
+  }
+}
 
 // alias: p1 - p2 = p1.skip_right(p2)
-// impl<'a, I: 'a, F, G, A, B> Sub<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
-// where
-//   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
-//   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + Clone + 'a,
-//   A: Clone + 'a,
-//   B: Clone + 'a,
-// {
-//   type Output = impl Parser<'a, I, A>;
-//
-//   fn sub(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
-//     self.skip_right(rhs)
-//   }
-// }
+impl<'a, I: 'a, F, G, A, B> Sub<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
+where
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
+  A: Clone + 'a,
+  B: 'a,
+{
+  type Output = impl Parser<'a, I, A>;
+
+  fn sub(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
+      self.flat_map(move |a| {
+          let rhs_clone = rhs.clone();
+          let a_clone = a.clone();
+          RcParser::new(move |ctx: ParseContext<'a, I>| {
+              match rhs_clone.run(ctx) {
+                  ParseResult::Success {
+                      parse_context: next_ctx,
+                      value: _b,
+                      length,
+                  } => {
+                      ParseResult::successful(next_ctx, a_clone.clone(), length)
+                  }
+                  ParseResult::Failure { error, committed_status } => {
+                      ParseResult::failed(error, committed_status)
+                  }
+              }
+          })
+      })
+  }
+}
 
 // #[cfg(test)]
 // mod tests {

@@ -6,7 +6,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   /// Transform success result (consuming self)
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
-    Self: 'a, // Sized moved to Parser trait
+    Self: 'a,
     A: 'a,
     B: Clone + 'a,
     F: Fn(A) -> B + 'a {
@@ -16,7 +16,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   /// Chain parsers (consuming self)
   fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
   where
-    Self: 'a, // Sized moved to Parser trait
+    Self: 'a,
     A: 'a,
     B: 'a,
     P: Parser<'a, I, B> + 'a,
