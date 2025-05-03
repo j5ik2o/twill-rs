@@ -4,7 +4,7 @@ use crate::parser::{Parser, RcParser};
 pub trait CollectParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn collect(self) -> impl Parser<'a, I, &'a [I]>
+  fn collect(&'a self) -> impl Parser<'a, I, &'a [I]>
   where
     A: 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
