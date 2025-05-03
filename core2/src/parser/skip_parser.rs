@@ -11,7 +11,7 @@ where
   Self: 'a, {
   /// Sequential parser (discard first parser result) - implemented using skip_left_with
   /// alias: p1 * p2 = p1.skip_left(p2)
-  fn skip_left<P2, B>(self, p2: P2) -> impl Parser<'a, I, B>
+  fn skip_left<P2, B>(self, p2: &'a P2) -> impl Parser<'a, I, B>
   where
     A: Clone + 'a,
     B: Clone + 'a,
@@ -21,7 +21,7 @@ where
 
   /// Sequential parser (discard second parser result) - implemented using skip_right_with
   /// alias: p1 - p2 = p1.skip_right(p2)
-  fn skip_right<B, P2>(self, p2: P2) -> impl Parser<'a, I, A>
+  fn skip_right<B, P2>(self, p2: &'a P2) -> impl Parser<'a, I, A>
   where
     A: Clone + 'a,
     B: Clone + 'a,
@@ -34,7 +34,7 @@ where
 impl<'a, T, I: 'a, A> SkipParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + 'a {}
 
 // alias: p1 * p2 = p1.skip_left(p2)
-impl<'a, I: 'a, F, G, A, B> Mul<RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
+impl<'a, I: 'a, F, G, A, B> Mul<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + Clone + 'a,
@@ -43,13 +43,13 @@ where
 {
   type Output = impl Parser<'a, I, B>;
 
-  fn mul(self, rhs: RcParser<'a, I, B, G>) -> Self::Output {
+  fn mul(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
     self.skip_left(rhs)
   }
 }
 
 // alias: p1 - p2 = p1.skip_right(p2)
-impl<'a, I: 'a, F, G, A, B> Sub<RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
+impl<'a, I: 'a, F, G, A, B> Sub<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + Clone + 'a,
   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + Clone + 'a,
@@ -58,7 +58,7 @@ where
 {
   type Output = impl Parser<'a, I, A>;
 
-  fn sub(self, rhs: RcParser<'a, I, B, G>) -> Self::Output {
+  fn sub(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
     self.skip_right(rhs)
   }
 }
