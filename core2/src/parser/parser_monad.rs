@@ -4,7 +4,7 @@ use crate::parser::{successful, Parser, RcParser};
 /// Trait providing parser transformation methods (consuming self)
 pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   /// Transform success result (consuming self)
-  fn map<F, B>(self, f: F) -> impl Parser<'a, I, B> // Changed to take self
+  fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     A: 'a,
     B: Clone + 'a,
@@ -21,14 +21,18 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
     F: Fn(A) -> P + 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
-        parse_context,
+        parse_context: mut pc1,
         value,
         length,
-      } => f(value).run(parse_context.advance(length)),
+      } => {
+        pc1.advance_mut(length);
+        f(value).run(pc1)
+      }
       ParseResult::Failure {
+        parse_context,
         error,
         committed_status,
-      } => ParseResult::failed(error, committed_status),
+      } => ParseResult::failed(parse_context, error, committed_status),
     })
   }
 }

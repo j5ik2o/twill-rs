@@ -7,10 +7,10 @@ use crate::parser::{Parser, RcParser};
 use std::ops::{Mul, Sub};
 
 /// Trait providing sequence-related parser operations (consuming self)
-pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + AndThenParser<'a, I, A> // Add AndThenParser bound
-{
+pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + AndThenParser<'a, I, A> {
   /// Sequential parser (discard first parser result) - implemented using and_then + map
-  fn skip_left<P2, B>(self, p2: &'a P2) -> impl Parser<'a, I, B> // Changed to take self
+  fn skip_left<P2, B>(self, p2: &'a P2) -> impl Parser<'a, I, B>
+  // Changed to take self
   where
     A: 'a,
     B: Clone + 'a,
@@ -19,7 +19,8 @@ pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + A
   }
 
   /// Sequential parser (discard second parser result) - implemented using and_then + map
-  fn skip_right<B, P2>(self, p2: &'a P2) -> impl Parser<'a, I, A> // Changed to take self
+  fn skip_right<B, P2>(self, p2: &'a P2) -> impl Parser<'a, I, A>
+  // Changed to take self
   where
     A: Clone + 'a,
     B: 'a,

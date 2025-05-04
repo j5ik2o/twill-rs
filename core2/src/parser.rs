@@ -6,10 +6,10 @@ use std::rc::Rc;
 mod and_then_parser;
 mod attempt_parser;
 mod collect_parser;
+mod or_parser;
 pub mod parser_monad;
 mod skip_parser;
 mod transform_parser;
-mod or_parser;
 
 pub use and_then_parser::*;
 pub use attempt_parser::*;

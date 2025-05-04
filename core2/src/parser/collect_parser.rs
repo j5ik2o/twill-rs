@@ -21,9 +21,10 @@ where
         }
       }
       ParseResult::Failure {
+        parse_context,
         error,
         committed_status,
-      } => ParseResult::failed(error, committed_status),
+      } => ParseResult::failed(parse_context, error, committed_status),
     })
   }
 }

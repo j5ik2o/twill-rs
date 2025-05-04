@@ -1,77 +1,76 @@
-use crate::parse_context::ParseContext;
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Display;
 
 /// The enum type representing the parsing error.
-#[derive(Debug, Clone)]
-pub enum ParseError<'a, I> {
-  /// Error when the parser's condition does not match
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
+pub enum ParseError<'a, I: 'a> {
+  /// パーサの条件にマッチしなかった場合のエラー
   Mismatch {
-    parse_context: ParseContext<'a, I>,
+    input: &'a [I],
+    offset: usize,
     length: usize,
     message: String,
   },
-  /// Error when conversion fails
+  /// 変換に失敗した際のエラー
   Conversion {
-    parse_context: ParseContext<'a, I>,
+    input: &'a [I],
+    offset: usize,
     length: usize,
     message: String,
   },
-  /// Error when parsing is interrupted
-  Incomplete { parse_context: ParseContext<'a, I> },
-  /// Error when the result deviates from expectations
+  /// 解析中断のエラー
+  Incomplete,
+  /// 期待から逸れた際のエラー
   Expect {
-    parse_context: ParseContext<'a, I>,
+    offset: usize,
     inner: Box<ParseError<'a, I>>,
     message: String,
   },
-  /// Custom error
+  /// カスタムエラー
   Custom {
-    parse_context: ParseContext<'a, I>,
+    offset: usize,
     inner: Option<Box<ParseError<'a, I>>>,
     message: String,
   },
 }
 
-impl<'a, I> Display for ParseError<'a, I> {
+impl<'a, I: Clone + 'a> Display for ParseError<'a, I> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      ParseError::Incomplete { .. } => write!(f, "Incomplete"),
+      ParseError::Incomplete => write!(f, "Incomplete"),
       ParseError::Mismatch {
         ref message,
-        parse_context,
+        ref offset,
         ..
-      } => write!(f, "Mismatch at {}: {}", parse_context.offset(), message),
+      } => write!(f, "Mismatch at {}: {}", offset, message),
       ParseError::Conversion {
         ref message,
-        parse_context,
+        ref offset,
         ..
-      } => write!(f, "Conversion failed at {}: {}", parse_context.offset(), message),
+      } => write!(f, "Conversion failed at {}: {}", offset, message),
       ParseError::Expect {
-        parse_context,
         ref message,
+        ref offset,
         ref inner,
-        ..
-      } => write!(f, "{} at {}: {}", message, parse_context.offset(), inner),
+      } => write!(f, "{} at {}: {}", message, offset, inner),
       ParseError::Custom {
-        parse_context,
         ref message,
+        ref offset,
         inner: Some(ref inner),
-        ..
-      } => write!(f, "{} at {}, (inner: {})", message, parse_context.offset(), inner),
+      } => write!(f, "{} at {}, (inner: {})", message, offset, inner),
       ParseError::Custom {
-        parse_context,
         ref message,
+        ref offset,
         inner: None,
-        ..
-      } => write!(f, "{} at {}", message, parse_context.offset()),
+      } => write!(f, "{} at {}", message, offset),
     }
   }
 }
 
 impl<'a> ParseError<'a, char> {
   pub fn input_string(&self) -> Option<String> {
-    self.input().map(|chars| String::from_iter(chars))
+    self.input().map(|chars| String::from_iter(chars.iter().cloned()))
   }
 }
 
@@ -87,35 +86,21 @@ impl<'a> ParseError<'a, u8> {
   }
 }
 
-impl<'a, I> ParseError<'a, I> {
-  pub fn input(&self) -> Option<&'a [I]> {
+impl<'a, I: 'a> ParseError<'a, I> {
+  pub fn input(&self) -> Option<&[I]> {
     match self {
-      ParseError::Incomplete { .. } => None,
+      ParseError::Incomplete => None,
       ParseError::Mismatch {
-        parse_context: context,
-        length,
-        ..
-      } => Some(context.slice_with_len(*length)),
+        input, offset, length, ..
+      } => Some(&input[*offset..(*offset + length)]),
       ParseError::Conversion {
-        parse_context: context,
-        length,
-        ..
-      } => Some(context.slice_with_len(*length)),
+        input, offset, length, ..
+      } => Some(&input[*offset..(*offset + length)]),
       ParseError::Expect { ref inner, .. } => inner.input(),
       ParseError::Custom {
         inner: Some(ref inner), ..
       } => inner.input(),
       ParseError::Custom { inner: None, .. } => None,
-    }
-  }
-
-  pub fn offset(&self) -> Option<usize> {
-    match self {
-      ParseError::Incomplete { .. } => None,
-      ParseError::Mismatch { parse_context, .. } => Some(parse_context.offset()),
-      ParseError::Conversion { parse_context, .. } => Some(parse_context.offset()),
-      ParseError::Expect { parse_context, .. } => Some(parse_context.offset()),
-      ParseError::Custom { parse_context, .. } => Some(parse_context.offset()),
     }
   }
 
@@ -149,62 +134,40 @@ impl<'a, I> ParseError<'a, I> {
 
   pub fn is_in_complete(&self) -> bool {
     match self {
-      ParseError::Incomplete { .. } => true,
+      ParseError::Incomplete => true,
       _ => false,
     }
   }
 
-  pub fn parse_context(&self) -> &ParseContext<'a, I> {
-    match self {
-      ParseError::Incomplete { parse_context: context } => context,
-      ParseError::Mismatch {
-        parse_context: context, ..
-      } => context,
-      ParseError::Conversion {
-        parse_context: context, ..
-      } => context,
-      ParseError::Expect {
-        parse_context: context, ..
-      } => context,
-      ParseError::Custom {
-        parse_context: context, ..
-      } => context,
-    }
+  pub fn of_expect(offset: usize, inner: Box<ParseError<'a, I>>, message: String) -> Self {
+    ParseError::Expect { offset, inner, message }
   }
 
-  pub fn of_expect(context: ParseContext<'a, I>, inner: Box<ParseError<'a, I>>, message: String) -> Self {
-    ParseError::Expect {
-      parse_context: context,
-      inner,
-      message,
-    }
+  pub fn of_custom(offset: usize, inner: Option<Box<ParseError<'a, I>>>, message: String) -> Self {
+    ParseError::Custom { offset, inner, message }
   }
 
-  pub fn of_custom(context: ParseContext<'a, I>, inner: Option<Box<ParseError<'a, I>>>, message: String) -> Self {
-    ParseError::Custom {
-      parse_context: context,
-      inner,
-      message,
-    }
-  }
-
-  pub fn of_mismatch(context: ParseContext<'a, I>, length: usize, message: String) -> Self {
+  pub fn of_mismatch(input: &'a [I], offset: usize, length: usize, message: String) -> Self
+  where
+    I: Clone, {
     ParseError::Mismatch {
-      parse_context: context,
+      input,
+      offset,
       length,
       message,
     }
   }
 
-  pub fn of_conversion(context: ParseContext<'a, I>, length: usize, message: String) -> Self {
+  pub fn of_conversion(input: &'a [I], offset: usize, length: usize, message: String) -> Self {
     ParseError::Conversion {
-      parse_context: context,
+      input,
+      offset,
       length,
       message,
     }
   }
 
-  pub fn of_in_complete(context: ParseContext<'a, I>) -> Self {
-    ParseError::Incomplete { parse_context: context }
+  pub fn of_in_complete() -> Self {
+    ParseError::Incomplete
   }
 }

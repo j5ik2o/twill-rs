@@ -15,6 +15,7 @@ pub enum ParseResult<'a, I, A> {
   },
   /// Failure.
   Failure {
+    parse_context: ParseContext<'a, I>,
     /// The cause when failure.
     error: ParseError<'a, I>,
     /// The commit status.
@@ -39,8 +40,13 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   ///
   /// - error: a [ParseError]
   /// - committed_status: a [CommittedStatus]
-  pub fn failed(error: ParseError<'a, I>, committed_status: CommittedStatus) -> Self {
+  pub fn failed(
+    parse_context: ParseContext<'a, I>,
+    error: ParseError<'a, I>,
+    committed_status: CommittedStatus,
+  ) -> Self {
     ParseResult::Failure {
+      parse_context,
       error,
       committed_status,
     }
@@ -49,15 +55,15 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   /// Returns the parse result of failure.
   ///
   /// - error: a [ParseError]
-  pub fn failed_with_uncommitted(error: ParseError<'a, I>) -> Self {
-    Self::failed(error, CommittedStatus::Uncommitted)
+  pub fn failed_with_uncommitted(parse_context: ParseContext<'a, I>, error: ParseError<'a, I>) -> Self {
+    Self::failed(parse_context, error, CommittedStatus::Uncommitted)
   }
 
   /// Returns the parse result of failure with committed status.
   ///
   /// - error: a [ParseError]
-  pub fn failed_with_commit(error: ParseError<'a, I>) -> Self {
-    Self::failed(error, CommittedStatus::Committed)
+  pub fn failed_with_commit(parse_context: ParseContext<'a, I>, error: ParseError<'a, I>) -> Self {
+    Self::failed(parse_context, error, CommittedStatus::Committed)
   }
 
   /// Convert [ParseResult] to [Result].
@@ -68,9 +74,11 @@ impl<'a, I, A> ParseResult<'a, I, A> {
     }
   }
 
-  pub fn context(&self) -> &ParseContext<'a, I> {
+  pub fn context(self) -> ParseContext<'a, I> {
     match self {
-      ParseResult::Failure { error, .. } => error.parse_context(),
+      ParseResult::Failure {
+        parse_context, error, ..
+      } => parse_context,
       ParseResult::Success { parse_context, .. } => parse_context,
     }
   }
@@ -119,31 +127,19 @@ impl<'a, I, A> ParseResult<'a, I, A> {
   }
 
   /// Unset the commit status when failure
-  pub fn with_uncommitted(self) -> Self {
-    match self {
-      ParseResult::Failure {
-        error,
-        committed_status: CommittedStatus::Committed,
-      } => ParseResult::Failure {
-        error,
-        committed_status: CommittedStatus::Uncommitted,
-      },
-      _ => self,
+  pub fn with_uncommitted(mut self) -> Self {
+    if let ParseResult::Failure { committed_status, .. } = &mut self {
+      *committed_status = CommittedStatus::Uncommitted;
     }
+    self
   }
 
   /// Set the commit status with fallback
-  pub fn with_committed_fallback(self, is_committed: bool) -> Self {
-    match self {
-      ParseResult::Failure {
-        error,
-        committed_status: c,
-      } => ParseResult::Failure {
-        error,
-        committed_status: (c.or(&is_committed.into())),
-      },
-      _ => self,
+  pub fn with_committed_fallback(mut self, is_committed: bool) -> Self {
+    if let ParseResult::Failure { committed_status, .. } = &mut self {
+      *committed_status = committed_status.or(&is_committed.into());
     }
+    self
   }
 
   /// Convert the result to another type (keeping the original failure when failed)
@@ -157,9 +153,11 @@ impl<'a, I, A> ParseResult<'a, I, A> {
         length,
       } => f(parse_context, value, length),
       ParseResult::Failure {
+        parse_context,
         error: e,
         committed_status: c,
       } => ParseResult::Failure {
+        parse_context,
         error: e,
         committed_status: c,
       },
@@ -182,9 +180,11 @@ impl<'a, I, A> ParseResult<'a, I, A> {
     F: Fn(ParseError<'a, I>) -> ParseError<'a, I>, {
     match self {
       ParseResult::Failure {
+        parse_context,
         error: e,
         committed_status: c,
       } => ParseResult::Failure {
+        parse_context,
         error: f(e),
         committed_status: c,
       },

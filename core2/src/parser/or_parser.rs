@@ -17,9 +17,7 @@ where
         pr @ ParseResult::Failure {
           committed_status: CommittedStatus::Uncommitted,
           ..
-        } => {
-          other.run(pr.context().with_same_state())
-        }
+        } => other.run(pr.context().with_same_state()),
         other => other,
       },
     )

@@ -16,13 +16,21 @@ where
   }
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
-  fn not(self) -> impl Parser<'a, I, ()> {
+  fn not(self) -> impl Parser<'a, I, ()>
+  where
+    Self: Sized,
+    I: Clone + 'a, {
     RcParser::new(
       move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success { parse_context, .. } => {
           let len = parse_context.last_offset().unwrap_or(0);
-          let parser_error = ParseError::of_mismatch(parse_context, len, "not predicate failed".to_string());
-          ParseResult::failed_with_uncommitted(parser_error)
+          let parser_error = ParseError::of_mismatch(
+            parse_context.input(),
+            parse_context.offset(),
+            len,
+            "not predicate failed".to_string(),
+          );
+          ParseResult::failed_with_uncommitted(parse_context, parser_error)
         }
         pr @ ParseResult::Failure { .. } => ParseResult::successful(pr.context().with_same_state(), (), 0),
       },
