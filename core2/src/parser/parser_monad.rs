@@ -1,6 +1,6 @@
+use crate::combinators::successful;
 use crate::parse_result::ParseResult;
 use crate::parser::{Parser, RcParser};
-use crate::successful;
 
 /// Trait providing parser transformation methods (consuming self)
 pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {

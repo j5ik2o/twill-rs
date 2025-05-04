@@ -1,4 +1,4 @@
-use crate::{ParseResult, Parser, RcParser};
+use crate::prelude::*;
 
 pub trait OffsetParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
 where

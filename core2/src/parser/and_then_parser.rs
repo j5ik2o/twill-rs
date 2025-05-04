@@ -5,7 +5,7 @@ use crate::parser::{Parser, RcParser}; // successful は不要に // ParseResult
 /// Trait providing sequence-related parser operations (consuming self)
 pub trait AndThenParser<'a, I: 'a, A>: ParserMonad<'a, I, A> {
   /// Sequential parser (conjunction) - implemented directly using RcParser (consuming self)
-  fn and_then<P2, B>(self, p2: &'a P2) -> impl Parser<'a, I, (A, B)>
+  fn and_then<P2, B>(self, p2: P2) -> impl Parser<'a, I, (A, B)>
   where
     A: 'a,
     B: 'a,

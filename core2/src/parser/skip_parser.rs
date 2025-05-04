@@ -1,6 +1,5 @@
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-// use crate::parser::and_then_parser::AndThenParser; // Directly used AndThenParser is not needed if using flat_map
 use crate::parser::and_then_parser::AndThenParser;
 use crate::parser::parser_monad::ParserMonad;
 use crate::parser::{Parser, RcParser};
@@ -9,7 +8,7 @@ use std::ops::{Mul, Sub};
 /// Trait providing sequence-related parser operations (consuming self)
 pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + AndThenParser<'a, I, A> {
   /// Sequential parser (discard first parser result) - implemented using and_then + map
-  fn skip_left<P2, B>(self, p2: &'a P2) -> impl Parser<'a, I, B>
+  fn skip_left<P2, B>(self, p2: P2) -> impl Parser<'a, I, B>
   // Changed to take self
   where
     A: 'a,
@@ -19,7 +18,7 @@ pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + A
   }
 
   /// Sequential parser (discard second parser result) - implemented using and_then + map
-  fn skip_right<B, P2>(self, p2: &'a P2) -> impl Parser<'a, I, A>
+  fn skip_right<B, P2>(self, p2: P2) -> impl Parser<'a, I, A>
   // Changed to take self
   where
     A: Clone + 'a,
@@ -29,7 +28,7 @@ pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + A
   }
 }
 
-impl<'a, I: 'a, F, G, A, B> Mul<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
+impl<'a, I: 'a, F, G, A, B> Mul<RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
   Self: SkipParser<'a, I, A>,
   A: 'a,
@@ -40,12 +39,12 @@ where
 {
   type Output = impl Parser<'a, I, B>;
 
-  fn mul(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
+  fn mul(self, rhs: RcParser<'a, I, B, G>) -> Self::Output {
     self.skip_left(rhs)
   }
 }
 
-impl<'a, I: 'a, F, G, A, B> Sub<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
+impl<'a, I: 'a, F, G, A, B> Sub<RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
   Self: SkipParser<'a, I, A>,
   A: Clone + 'a,
@@ -56,7 +55,7 @@ where
 {
   type Output = impl Parser<'a, I, A>;
 
-  fn sub(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
+  fn sub(self, rhs: RcParser<'a, I, B, G>) -> Self::Output {
     self.skip_right(rhs)
   }
 }

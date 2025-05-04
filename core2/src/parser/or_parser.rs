@@ -8,7 +8,7 @@ pub trait OrParser<'a, I: 'a, A>: Parser<'a, I, A>
 where
   Self: 'a, {
   /// Try a dynamically generated parser if the first fails
-  fn or<P>(self, other: &'a P) -> impl Parser<'a, I, A>
+  fn or<P>(self, other: P) -> impl Parser<'a, I, A>
   where
     A: 'a,
     P: Parser<'a, I, A> + 'a, {

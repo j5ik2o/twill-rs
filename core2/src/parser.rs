@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 mod and_then_parser;
 mod attempt_parser;
+mod binary_operator_parser;
 mod collect_parser;
 mod conversion_parser;
 mod logging_parser;
@@ -15,9 +16,9 @@ mod repeat_parser;
 mod skip_parser;
 mod transform_parser;
 
-use crate::{CommittedStatus, ParseError};
 pub use and_then_parser::*;
 pub use attempt_parser::*;
+pub use binary_operator_parser::*;
 pub use collect_parser::*;
 pub use conversion_parser::*;
 pub use logging_parser::*;
@@ -36,19 +37,6 @@ pub trait Parser<'a, I: 'a, A>: Sized + 'a {
     let parse_context = ParseContext::new(input, 0);
     self.run(parse_context)
   }
-}
-
-#[inline(always)]
-pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A) -> impl Parser<'a, I, A> {
-  RcParser::new(move |parse_context| ParseResult::successful(parse_context, value.clone(), 0))
-}
-
-#[inline(always)]
-pub fn failed<'a, I: Clone + 'a, A: 'a>(
-  error: ParseError<'a, I>,
-  committed_status: CommittedStatus,
-) -> impl Parser<'a, I, A> {
-  RcParser::new(move |parse_context| ParseResult::failed(parse_context, error.clone(), committed_status))
 }
 
 // --- RcParser (Try without changes first) ---
