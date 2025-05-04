@@ -23,19 +23,15 @@ pub(crate) trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
     P: Parser<'a, I, B> + 'a,
     F: Fn(A) -> P + 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
-      ParseResult::Success {
-        parse_context: mut pc1,
-        value,
-        length,
-      } => {
-        pc1.advance_mut(length);
-        f(value).run(pc1)
+      ParseResult::Success { parse_context, value: a, length: n } => {
+        let ps = parse_context.advance(n);
+        f(a).run(ps).with_committed_fallback(n != 0).with_add_length(n)
       }
       ParseResult::Failure {
         parse_context,
         error,
-        committed_status,
-      } => ParseResult::failed(parse_context, error, committed_status),
+        committed_status: is_committed,
+      } => ParseResult::failed(parse_context, error, is_committed),
     })
   }
 }
