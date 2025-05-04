@@ -37,7 +37,6 @@ where
     let msg = format!("offset: {}", offset);
     parse_context.next_mut();
     let input = parse_context.input();
-    let offset = parse_context.offset();
     let pe = ParseError::of_mismatch(input, offset, 1, msg);
     ParseResult::failed_with_uncommitted(parse_context, pe)
   })

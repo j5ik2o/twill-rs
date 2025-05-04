@@ -34,13 +34,12 @@ where
     OP: Fn(A, A) -> A + Clone + 'a,
     P2: Parser<'a, I, OP> + Clone + 'a, {
     let default_value = x.clone();
-    let d = successful(default_value.clone());
     op.clone()
       .flat_map(move |f| {
         let default_value = x.clone();
         self.clone().map(move |y| f(default_value.clone(), y))
       })
-      .or(d)
+      .or(successful(default_value.clone()))
   }
 
   /// Left associative binary operator parsing helper with the default value

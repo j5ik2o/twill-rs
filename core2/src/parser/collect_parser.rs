@@ -11,10 +11,10 @@ where
       ParseResult::Success {
         parse_context, length, ..
       } => {
-        let value = parse_context.slice_with_len(length);
+        let  slice = parse_context.slice_with_len(length);
         ParseResult::Success {
           parse_context,
-          value,
+          value: slice,
           length,
         }
       }
@@ -28,3 +28,20 @@ where
 }
 
 impl<'a, T, I: 'a, A> CollectParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+
+#[cfg(test)]
+mod tests {
+  use crate::prelude::*;
+
+  #[test]
+  fn test_collect() {
+    let text: &str = "ab";
+    let input = text.chars().collect::<Vec<_>>();
+    let p = elm_ref('a').and_then(elm_ref('b')).collect();
+
+    let result = p.parse(&input).to_result();
+    println!("{:?}", result);
+
+    assert!(result.is_ok());
+  }
+}
