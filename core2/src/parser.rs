@@ -32,6 +32,41 @@ pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A) -> impl Parser<'a, I, A> {
   RcParser::new(move |parse_context| ParseResult::successful(parse_context, value.clone(), 0))
 }
 
+/// Creates a parser that always succeeds, returning the given value without consuming any input.
+///
+/// This macro version avoids the `Clone` requirement of the `successful` function
+/// by capturing the value directly in the generated closure.
+///
+/// # Arguments
+///
+/// * `$value:expr` - The value to be returned by the parser.
+///
+/// # Examples
+///
+/// ```rust
+/// # use core2::parser::*;
+/// # use core2::parse_context::ParseContext;
+/// # use core2::parse_result::ParseResult;
+/// // A value that doesn't implement Clone
+/// struct NonCloneable(i32);
+///
+/// let parser = successful!(NonCloneable(42));
+/// let input: &[char] = &['a', 'b', 'c'];
+/// let result = parser.parse(input);
+/// assert!(result.is_successful());
+/// // assert_eq!(result.unwrap().0, 42); // Need a way to compare NonCloneable
+/// assert_eq!(result.remaining.offset(), 0);
+/// ```
+#[macro_export]
+macro_rules! successful {
+    ($value:expr) => {
+        // Use $crate to refer to items within the core2 crate itself
+        $crate::parser::RcParser::new(move |parse_context| {
+            $crate::parse_result::ParseResult::successful(parse_context, $value, 0)
+        })
+    };
+}
+
 // --- RcParser (Try without changes first) ---
 
 pub struct RcParser<'a, I: 'a, A, F>
