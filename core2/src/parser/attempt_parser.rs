@@ -6,7 +6,7 @@ where
   Self: 'a, {
   fn attempt(self) -> impl Parser<'a, I, A>
   where
-    A: Clone + 'a, {
+    A: 'a, {
     RcParser::new(move |parse_context: ParseContext<'a, I>| self.run(parse_context).with_uncommitted())
   }
 }

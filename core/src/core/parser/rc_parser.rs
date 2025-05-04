@@ -97,10 +97,7 @@ pub fn reusable_parser_opt<'a, I: 'a, A: 'a, P, F>(
 where
   F: Fn() -> P + 'a,
   P: ClonableParser<'a, I, A>, {
-  match factory_opt {
-    Some(f) => Some(reusable_parser(f)),
-    None => None,
-  }
+  factory_opt.map(reusable_parser)
 }
 
 /// Create an optional reusable RcParser from an optional cloneable parser

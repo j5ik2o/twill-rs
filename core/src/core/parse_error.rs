@@ -33,7 +33,7 @@ pub enum ParseError<'a, I> {
   },
 }
 
-impl<'a, I> Display for ParseError<'a, I> {
+impl<I> Display for ParseError<'_, I> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       ParseError::Incomplete { .. } => write!(f, "Incomplete"),
@@ -69,13 +69,13 @@ impl<'a, I> Display for ParseError<'a, I> {
   }
 }
 
-impl<'a> ParseError<'a, char> {
+impl ParseError<'_, char> {
   pub fn input_string(&self) -> Option<String> {
     self.input().map(|chars| String::from_iter(chars))
   }
 }
 
-impl<'a> ParseError<'a, u8> {
+impl ParseError<'_, u8> {
   pub fn input_string(&self) -> Option<String> {
     match self.input() {
       Some(bytes) => match std::str::from_utf8(bytes) {
@@ -120,38 +120,23 @@ impl<'a, I> ParseError<'a, I> {
   }
 
   pub fn is_expect(&self) -> bool {
-    match self {
-      ParseError::Expect { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Expect { .. })
   }
 
   pub fn is_custom(&self) -> bool {
-    match self {
-      ParseError::Custom { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Custom { .. })
   }
 
   pub fn is_mismatch(&self) -> bool {
-    match self {
-      ParseError::Mismatch { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Mismatch { .. })
   }
 
   pub fn is_conversion(&self) -> bool {
-    match self {
-      ParseError::Conversion { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Conversion { .. })
   }
 
   pub fn is_in_complete(&self) -> bool {
-    match self {
-      ParseError::Incomplete { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Incomplete { .. })
   }
 
   pub fn parse_context(&self) -> &ParseContext<'a, I> {

@@ -30,7 +30,7 @@ where
   I: PartialEq + 'a, {
   FnParser::new(move |mut parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
-    if let Some(actual) = input.get(0) {
+    if let Some(actual) = input.first() {
       if f(actual) {
         return ParseResult::successful(parse_context.with_same_state(), actual, 1);
       }
@@ -163,7 +163,7 @@ where
   FnParser::new(move |mut parse_context| {
     let set = unsafe { &*set_ptr };
     let input = parse_context.input();
-    if let Some(s) = input.get(0) {
+    if let Some(s) = input.first() {
       if set.contains(s) {
         ParseResult::successful(parse_context, s, 1)
       } else {
@@ -204,7 +204,7 @@ where
   I: PartialEq + PartialOrd + Display + Clone + 'a, {
   FnParser::new(move |mut parse_context| {
     let input = parse_context.input();
-    if let Some(s) = input.get(0) {
+    if let Some(s) = input.first() {
       if *s >= start && *s <= end {
         ParseResult::successful(parse_context, s, 1)
       } else {
@@ -246,7 +246,7 @@ where
   // クローン可能なパーサーを実装
   FnParser::new(move |mut parse_context| {
     let input = parse_context.input();
-    if let Some(s) = input.get(0) {
+    if let Some(s) = input.first() {
       if *s >= start && *s < end {
         ParseResult::successful(parse_context, s, 1)
       } else {
@@ -289,7 +289,7 @@ where
   FnParser::new(move |mut parse_context| {
     let set = unsafe { &*set_ptr };
     let input = parse_context.input();
-    if let Some(s) = input.get(0) {
+    if let Some(s) = input.first() {
       if !set.contains(s) {
         ParseResult::successful(parse_context, s, 1)
       } else {
@@ -463,16 +463,16 @@ pub fn regex<'a>(pattern: &str) -> impl ClonableParser<'a, char, String> {
     log::debug!("regex: input = {:?}", input);
     let str = String::from_iter(input);
     if let Some(captures) = regex.captures(&str).as_ref() {
-      if let Some(m) = captures.get(0) {
-        let str = m.as_str();
-        ParseResult::successful(parse_context, str.to_string(), str.len())
-      } else {
-        let msg = format!("regex {:?} found: {:?}", regex, str);
-        let pe = ParseError::of_mismatch(parse_context, str.len(), msg);
-        return ParseResult::failed(pe, (captures.len() != 0).into());
+      match captures.get(0) {
+        Some(m) => ParseResult::successful(parse_context, m.as_str().to_string(), m.as_str().len()),
+        _ => {
+          let msg = format!("regex {:?} found: {:?}", regex, str);
+          let pe = ParseError::of_mismatch(parse_context, str.len(), msg);
+          ParseResult::failed(pe, (captures.len() != 0).into())
+        }
       }
     } else {
-      return ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context));
+      ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context))
     }
   })
 }

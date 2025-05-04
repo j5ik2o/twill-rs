@@ -18,7 +18,7 @@ where
   I: Display, {
   FnParser::new(move |mut parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
-    if let Some(actual) = input.get(0) {
+    if let Some(actual) = input.first() {
       let msg = format!("expect end of input, found: {}", actual);
       parse_context.next_mut();
       let pe = ParseError::of_mismatch(parse_context, 1, msg);

@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Display;
 
@@ -68,13 +67,13 @@ impl<'a, I: Clone + 'a> Display for ParseError<'a, I> {
   }
 }
 
-impl<'a> ParseError<'a, char> {
+impl ParseError<'_, char> {
   pub fn input_string(&self) -> Option<String> {
     self.input().map(|chars| String::from_iter(chars.iter().cloned()))
   }
 }
 
-impl<'a> ParseError<'a, u8> {
+impl ParseError<'_, u8> {
   pub fn input_string(&self) -> Option<String> {
     match self.input() {
       Some(bytes) => match std::str::from_utf8(bytes) {
@@ -105,38 +104,23 @@ impl<'a, I: 'a> ParseError<'a, I> {
   }
 
   pub fn is_expect(&self) -> bool {
-    match self {
-      ParseError::Expect { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Expect { .. })
   }
 
   pub fn is_custom(&self) -> bool {
-    match self {
-      ParseError::Custom { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Custom { .. })
   }
 
   pub fn is_mismatch(&self) -> bool {
-    match self {
-      ParseError::Mismatch { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Mismatch { .. })
   }
 
   pub fn is_conversion(&self) -> bool {
-    match self {
-      ParseError::Conversion { .. } => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Conversion { .. })
   }
 
   pub fn is_in_complete(&self) -> bool {
-    match self {
-      ParseError::Incomplete => true,
-      _ => false,
-    }
+    matches!(self, ParseError::Incomplete)
   }
 
   pub fn of_expect(offset: usize, inner: Box<ParseError<'a, I>>, message: String) -> Self {
@@ -147,9 +131,7 @@ impl<'a, I: 'a> ParseError<'a, I> {
     ParseError::Custom { offset, inner, message }
   }
 
-  pub fn of_mismatch(input: &'a [I], offset: usize, length: usize, message: String) -> Self
-  where
-    I: Clone, {
+  pub fn of_mismatch(input: &'a [I], offset: usize, length: usize, message: String) -> Self {
     ParseError::Mismatch {
       input,
       offset,

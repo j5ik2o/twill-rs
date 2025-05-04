@@ -76,9 +76,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
 
   pub fn context(self) -> ParseContext<'a, I> {
     match self {
-      ParseResult::Failure {
-        parse_context, error, ..
-      } => parse_context,
+      ParseResult::Failure { parse_context, .. } => parse_context,
       ParseResult::Success { parse_context, .. } => parse_context,
     }
   }

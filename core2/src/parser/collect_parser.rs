@@ -9,15 +9,13 @@ where
     A: 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
-        parse_context: pc1,
-        length,
-        ..
+        parse_context, length, ..
       } => {
-        let slice = pc1.slice_with_len(length);
+        let value = parse_context.slice_with_len(length);
         ParseResult::Success {
-          parse_context: pc1,
+          parse_context,
+          value,
           length,
-          value: slice,
         }
       }
       ParseResult::Failure {

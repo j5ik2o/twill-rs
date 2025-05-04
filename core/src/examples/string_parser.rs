@@ -21,7 +21,7 @@ pub fn string<'a>(expected: &'static str) -> impl ClonableParser<'a, char, &'sta
 pub fn any_char<'a>() -> impl ClonableParser<'a, char, char> {
   FnParser::new(move |mut parse_context: ParseContext<'a, char>| {
     let input = parse_context.input();
-    if let Some(&c) = input.get(0) {
+    if let Some(&c) = input.first() {
       parse_context.next_mut();
       ParseResult::successful(parse_context, c, 1)
     } else {
@@ -34,7 +34,7 @@ pub fn any_char<'a>() -> impl ClonableParser<'a, char, char> {
 pub fn one_of<'a>(chars: &'static [char]) -> impl ClonableParser<'a, char, char> {
   FnParser::new(move |mut parse_context: ParseContext<'a, char>| {
     let input = parse_context.input();
-    if let Some(&c) = input.get(0) {
+    if let Some(&c) = input.first() {
       if chars.contains(&c) {
         parse_context.next_mut();
         ParseResult::successful(parse_context, c, 1)

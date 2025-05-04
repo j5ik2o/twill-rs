@@ -179,7 +179,7 @@ impl Element for char {
   }
 }
 
-impl<'a> Element for &'a char {
+impl Element for &char {
   fn to_char(self) -> char {
     *self
   }

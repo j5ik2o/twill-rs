@@ -19,7 +19,7 @@ where
   fn not(self) -> impl Parser<'a, I, ()>
   where
     Self: Sized,
-    I: Clone + 'a, {
+    I: 'a, {
     RcParser::new(
       move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success { parse_context, .. } => {
