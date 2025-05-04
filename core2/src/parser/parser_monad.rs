@@ -5,6 +5,7 @@ use crate::successful;
 /// Trait providing parser transformation methods (consuming self)
 pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   /// Transform success result (consuming self)
+  #[inline(always)]
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     A: 'a,
@@ -14,6 +15,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   }
 
   /// Chain parsers (consuming self)
+  #[inline(always)]
   fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
   where
     A: 'a,

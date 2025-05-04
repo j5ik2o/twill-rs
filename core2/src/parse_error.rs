@@ -34,7 +34,7 @@ pub enum ParseError<'a, I: 'a> {
   },
 }
 
-impl<'a, I: Clone + 'a> Display for ParseError<'a, I> {
+impl<'a, I: 'a> Display for ParseError<'a, I> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       ParseError::Incomplete => write!(f, "Incomplete"),

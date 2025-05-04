@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Display, Formatter};
 use crate::committed_status::CommittedStatus;
 use crate::parse_context::ParseContext;
 use crate::parse_error::ParseError;
@@ -202,6 +203,15 @@ impl<'a, I, A> ParseResult<'a, I, A> {
         length: length + n,
       },
       _ => self,
+    }
+  }
+}
+
+impl<'a, I: 'a, A: Display> Display for ParseResult<'a, I, A> {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      ParseResult::Success { value, .. } => write!(f, "{}", value),
+      ParseResult::Failure { error, .. } => write!(f, "{}", error),
     }
   }
 }
