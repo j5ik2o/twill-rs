@@ -29,7 +29,6 @@ pub use repeat_parser::*;
 pub use skip_parser::*;
 pub use transform_parser::*;
 
-// Add Sized constraint here, as Parser methods take &self, but Monad methods will take self
 pub trait Parser<'a, I: 'a, A>: Sized + 'a {
   fn run(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
@@ -39,11 +38,8 @@ pub trait Parser<'a, I: 'a, A>: Sized + 'a {
   }
 }
 
-// --- RcParser (Try without changes first) ---
-
-pub struct RcParser<'a, I: 'a, A, F>
+pub(crate) struct RcParser<'a, I: 'a, A, F>
 where
-  // F constraint might need to change to FnMut or FnOnce (but Rc<FnOnce> is tricky)
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: Rc<F>,
   _phantom: PhantomData<(&'a I, A)>,
@@ -71,7 +67,6 @@ where
   }
 }
 
-// RcParser's Clone impl doesn't require F: Clone
 impl<'a, I: 'a, A, F> Clone for RcParser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,

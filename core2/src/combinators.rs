@@ -1,9 +1,11 @@
 mod elements_combinators;
 mod offset_combinators;
+mod skip_combinators;
 mod take_combinators;
 
 pub use elements_combinators::*;
 pub use offset_combinators::*;
+pub use skip_combinators::*;
 pub use take_combinators::*;
 
 use crate::prelude::*;

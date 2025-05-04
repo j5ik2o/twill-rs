@@ -10,6 +10,7 @@ pub trait AndThenParser<'a, I: 'a, A>: ParserMonad<'a, I, A> {
     A: 'a,
     B: 'a,
     P2: Parser<'a, I, B> + 'a, {
+    // self.clone().flat_map(move |a| p2.clone().map(move |b| (a.clone(), b)))
     RcParser::new(move |parse_context1| match self.run(parse_context1) {
       ParseResult::Success {
         parse_context: parse_context2,
@@ -19,8 +20,8 @@ pub trait AndThenParser<'a, I: 'a, A>: ParserMonad<'a, I, A> {
         ParseResult::Success {
           parse_context: parse_context3,
           value: b,
-          length: length2,
-        } => ParseResult::successful(parse_context3, (a, b), length1 + length2),
+          ..
+        } => ParseResult::successful(parse_context3, (a, b), length1),
         ParseResult::Failure {
           parse_context: parse_context3,
           error,

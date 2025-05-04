@@ -3,7 +3,7 @@ use crate::parse_result::ParseResult;
 use crate::parser::{Parser, RcParser};
 
 /// Trait providing parser transformation methods (consuming self)
-pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
+pub(crate) trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   /// Transform success result (consuming self)
   #[inline(always)]
   fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>

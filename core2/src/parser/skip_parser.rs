@@ -60,57 +60,65 @@ where
   }
 }
 
-// #[cfg(test)]
-// mod tests {
-//
-//   #[test]
-//   fn test_skip_left() {
-//     let text = "(abc)";
-//     let input = text.chars().collect::<Vec<_>>();
-//
-//     // '('をパースした後、"abc"をパースし、"abc"の結果を返す
-//     let p1 = elm_ref('(');
-//     let p2 = tag("abc");
-//
-//     let parser = p1.skip_left(p2);
-//
-//     let result = parser.parse(&input);
-//
-//     assert!(result.is_success());
-//     assert_eq!(result.success().unwrap(), "abc");
-//   }
-//
-//   #[test]
-//   fn test_skip_right() {
-//     let text = "abc)";
-//     let input = text.chars().collect::<Vec<_>>();
-//
-//     // "abc"をパースした後、')'をパースし、"abc"の結果を返す
-//     let p1 = tag("abc");
-//     let p2 = elm_ref(')');
-//
-//     let parser = p1.skip_right(p2);
-//
-//     let result = parser.parse(&input);
-//     assert!(result.is_success());
-//     assert_eq!(result.success().unwrap(), "abc");
-//   }
-//
-//   #[test]
-//   fn test_surround_manually() {
-//     let text = "(abc)";
-//     let input = text.chars().collect::<Vec<_>>();
-//
-//     let left = elm_ref('(');
-//     let middle = tag("abc");
-//     let right = elm_ref(')');
-//
-//     // surroundをskip_leftとskip_rightで手動で実装
-//     let parser = left.skip_left(middle).skip_right(right);
-//
-//     let result = parser.parse(&input);
-//
-//     assert!(result.is_success());
-//     assert_eq!(result.success().unwrap(), "abc");
-//   }
-// }
+/// Implement SkipParser for all types that implement Parser, ParserMonad, and AndThenParser
+impl<'a, T, I: 'a, A> SkipParser<'a, I, A> for T where
+  T: Parser<'a, I, A> + ParserMonad<'a, I, A> + AndThenParser<'a, I, A> + 'a
+{
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::combinators::{elm_ref, tag};
+
+  #[test]
+  fn test_skip_left() {
+    let text = "(abc)";
+    let input = text.chars().collect::<Vec<_>>();
+
+    // '('をパースした後、"abc"をパースし、"abc"の結果を返す
+    let p1 = elm_ref('(');
+    let p2 = tag("abc");
+
+    let parser = p1.skip_left(p2);
+
+    let result = parser.parse(&input);
+
+    assert!(result.is_success());
+    assert_eq!(result.success().unwrap(), "abc");
+  }
+
+  #[test]
+  fn test_skip_right() {
+    let text = "abc)";
+    let input = text.chars().collect::<Vec<_>>();
+
+    // "abc"をパースした後、')'をパースし、"abc"の結果を返す
+    let p1 = tag("abc");
+    let p2 = elm_ref(')');
+
+    let parser = p1.skip_right(p2);
+
+    let result = parser.parse(&input);
+    assert!(result.is_success());
+    assert_eq!(result.success().unwrap(), "abc");
+  }
+
+  #[test]
+  fn test_surround_manually() {
+    let text = "(abc)";
+    let input = text.chars().collect::<Vec<_>>();
+
+    let left = elm_ref('(');
+    let middle = tag("abc");
+    let right = elm_ref(')');
+
+    // surroundをskip_leftとskip_rightで手動で実装
+    let parser = left.skip_left(middle).skip_right(right);
+
+    let result = parser.parse(&input);
+
+    assert!(result.is_success());
+    assert_eq!(result.success().unwrap(), "abc");
+  }
+}
