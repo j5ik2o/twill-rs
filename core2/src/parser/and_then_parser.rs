@@ -11,9 +11,9 @@ pub trait AndThenParser<'a, I: 'a, A>: ParserMonad<'a, I, A> {
     B: 'a,
     P2: Parser<'a, I, B> + 'a, {
     RcParser::new(move |parse_context1| {
-      match self.run(parse_context1) { // self.run takes &self, so this works
+      match self.run(parse_context1) { 
         ParseResult::Success {
-          parse_context: parse_context2, // Renamed to avoid shadowing
+          parse_context: parse_context2,
           value: a,
           length: length1,
         } => match p2.run(parse_context2.advance(length1)) {

@@ -33,9 +33,9 @@ where
   Self: SkipParser<'a, I, A>,
   A: 'a,
   B: Clone + 'a,
-  RcParser<'a, I, B, G>: Parser<'a, I, B> + 'a, // P2 for skip_left
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, // RcParser bound
-  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a, // RcParser bound
+  RcParser<'a, I, B, G>: Parser<'a, I, B> + 'a,
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
 {
   type Output = impl Parser<'a, I, B>;
 
