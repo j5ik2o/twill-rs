@@ -1,7 +1,7 @@
-use std::fmt::{Debug, Display, Formatter};
 use crate::committed_status::CommittedStatus;
 use crate::parse_context::ParseContext;
 use crate::parse_error::ParseError;
+use std::fmt::{Debug, Display, Formatter};
 
 /// The enum type representing the parse result.
 #[derive(Debug, Clone)]

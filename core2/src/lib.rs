@@ -6,6 +6,7 @@ mod parse_context;
 mod parse_error;
 mod parse_result;
 mod parser;
+pub mod util;
 
 pub use committed_status::*;
 pub use element::*;

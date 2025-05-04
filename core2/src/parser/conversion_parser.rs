@@ -1,5 +1,5 @@
-use std::fmt::Debug;
 use crate::{ParseError, ParseResult, Parser, RcParser};
+use std::fmt::Debug;
 
 pub trait ConversionParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
   fn map_res<B, E, F>(self, f: F) -> impl Parser<'a, I, B>
@@ -26,7 +26,7 @@ pub trait ConversionParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
       ParseResult::Failure {
         parse_context,
         error,
-        committed_status ,
+        committed_status,
       } => ParseResult::failed(parse_context, error, committed_status),
     })
   }
@@ -53,7 +53,7 @@ pub trait ConversionParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
       ParseResult::Failure {
         parse_context,
         error,
-        committed_status ,
+        committed_status,
       } => ParseResult::failed(parse_context, error, committed_status),
     })
   }

@@ -6,25 +6,27 @@ use std::rc::Rc;
 mod and_then_parser;
 mod attempt_parser;
 mod collect_parser;
+mod conversion_parser;
 mod logging_parser;
+mod offset_parser;
 mod or_parser;
 mod parser_monad;
+mod repeat_parser;
 mod skip_parser;
 mod transform_parser;
-mod conversion_parser;
-mod offset_parser;
 
 use crate::{CommittedStatus, ParseError};
 pub use and_then_parser::*;
 pub use attempt_parser::*;
 pub use collect_parser::*;
+pub use conversion_parser::*;
+pub use logging_parser::*;
+pub use offset_parser::*;
+pub use or_parser::*;
 pub use parser_monad::*;
+pub use repeat_parser::*;
 pub use skip_parser::*;
 pub use transform_parser::*;
-pub use or_parser::*;
-pub use logging_parser::*;
-pub use conversion_parser::*;
-pub use offset_parser::*;
 
 // Add Sized constraint here, as Parser methods take &self, but Monad methods will take self
 pub trait Parser<'a, I: 'a, A>: Sized + 'a {

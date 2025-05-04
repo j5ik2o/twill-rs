@@ -58,7 +58,7 @@ where
   fn log<B, F>(self, name: &'a str, log_level: LogLevel) -> impl Parser<'a, I, A>
   where
     A: Display + 'a, {
-    self.log_map(name, log_level, |pr| format!("{}",  pr))
+    self.log_map(name, log_level, |pr| format!("{}", pr))
   }
 
   fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> impl Parser<'a, I, A>
