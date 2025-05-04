@@ -33,8 +33,8 @@ where
   A: Clone + 'a,
   B: Clone + 'a,
   C: Clone + 'a,
-  P1: Parser<'a, I, A> + 'a,
-  P2: Parser<'a, I, B> + 'a,
-  P3: Parser<'a, I, C> + 'a, {
+  P1: Parser<'a, I, A> + Clone + 'a,
+  P2: Parser<'a, I, B> + Clone + 'a,
+  P3: Parser<'a, I, C> + Clone + 'a, {
   lp.skip_left(parser).skip_right(rp)
 }

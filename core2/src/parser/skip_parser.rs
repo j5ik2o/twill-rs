@@ -9,20 +9,20 @@ use std::ops::{Mul, Sub};
 pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + AndThenParser<'a, I, A> {
   /// Sequential parser (discard first parser result) - implemented using and_then + map
   fn skip_left<P2, B>(self, p2: P2) -> impl Parser<'a, I, B>
-  // Changed to take self
   where
-    A: 'a,
+    Self: Clone + 'a,
+    A: Clone + 'a,
     B: Clone + 'a,
-    P2: Parser<'a, I, B> + 'a, {
+    P2: Parser<'a, I, B> +  Clone + 'a, {
     self.and_then(p2).map(move |(_, b)| b)
   }
 
   /// Sequential parser (discard second parser result) - implemented using and_then + map
   fn skip_right<B, P2>(self, p2: P2) -> impl Parser<'a, I, A>
-  // Changed to take self
   where
+      Self: Clone + 'a,
     A: Clone + 'a,
-    B: 'a,
+    B: Clone + 'a,
     P2: Parser<'a, I, B> + 'a, {
     self.and_then(p2).map(move |(a, _)| a)
   }
@@ -31,7 +31,7 @@ pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + A
 impl<'a, I: 'a, F, G, A, B> Mul<RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
   Self: SkipParser<'a, I, A>,
-  A: 'a,
+  A: Clone + 'a,
   B: Clone + 'a,
   RcParser<'a, I, B, G>: Parser<'a, I, B> + 'a,
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
@@ -48,7 +48,7 @@ impl<'a, I: 'a, F, G, A, B> Sub<RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
   Self: SkipParser<'a, I, A>,
   A: Clone + 'a,
-  B: 'a,
+  B: Clone + 'a,
   RcParser<'a, I, B, G>: Parser<'a, I, B> + 'a,
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,

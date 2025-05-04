@@ -29,7 +29,7 @@ pub use repeat_parser::*;
 pub use skip_parser::*;
 pub use transform_parser::*;
 
-pub trait Parser<'a, I: 'a, A>: Sized + 'a {
+pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
   fn run(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
   fn parse(&self, input: &'a [I]) -> ParseResult<'a, I, A> {
