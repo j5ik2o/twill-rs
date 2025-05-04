@@ -8,68 +8,54 @@ use std::ops::{Mul, Sub};
 
 /// Trait providing sequence-related parser operations (consuming self)
 pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + AndThenParser<'a, I, A> // Add AndThenParser bound
-where
-  // Self: 'a, // No longer needed as self is consumed
 {
   /// Sequential parser (discard first parser result) - implemented using and_then + map
-  /// alias: p1 * p2 = p1.skip_left(p2)
   fn skip_left<P2, B>(self, p2: &'a P2) -> impl Parser<'a, I, B> // Changed to take self
   where
-    A: 'a, // A is consumed by and_then
+    A: 'a,
     B: Clone + 'a,
-    P2: Parser<'a, I, B> + 'a, { // p2 doesn't need Clone if only used in and_then
-    // Now this should work because and_then and map take self
-    self.and_then(p2).map(move |(_, b)| b.clone())
+    P2: Parser<'a, I, B> + 'a, {
+    self.and_then(p2).map(move |(_, b)| b)
   }
 
   /// Sequential parser (discard second parser result) - implemented using and_then + map
-  /// alias: p1 - p2 = p1.skip_right(p2)
   fn skip_right<B, P2>(self, p2: &'a P2) -> impl Parser<'a, I, A> // Changed to take self
   where
-    A: Clone + 'a, // A needs Clone because it's returned by map
-    B: 'a, // B is consumed by and_then
-    P2: Parser<'a, I, B> + 'a, { // p2 doesn't need Clone if only used in and_then
-    // Now this should work because and_then and map take self
-    self.and_then(p2).map(move |(a, _)| a.clone())
+    A: Clone + 'a,
+    B: 'a,
+    P2: Parser<'a, I, B> + 'a, {
+    self.and_then(p2).map(move |(a, _)| a)
   }
 }
 
-// No blanket impl needed - default methods in the trait should suffice.
-
-// alias: p1 * p2 = p1.skip_left(p2)
 impl<'a, I: 'a, F, G, A, B> Mul<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
-  Self: SkipParser<'a, I, A>, // Self must implement SkipParser
+  Self: SkipParser<'a, I, A>,
   A: 'a,
   B: Clone + 'a,
   RcParser<'a, I, B, G>: Parser<'a, I, B> + 'a, // P2 for skip_left
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, // RcParser bound
   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a, // RcParser bound
 {
-  // Define Output type directly using impl Trait
   type Output = impl Parser<'a, I, B>;
 
   fn mul(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
-    // skip_left takes self, matching fn mul(self, ...)
     self.skip_left(rhs)
   }
 }
 
-// alias: p1 - p2 = p1.skip_right(p2)
 impl<'a, I: 'a, F, G, A, B> Sub<&'a RcParser<'a, I, B, G>> for RcParser<'a, I, A, F>
 where
-  Self: SkipParser<'a, I, A>, // Self must implement SkipParser
+  Self: SkipParser<'a, I, A>,
   A: Clone + 'a,
   B: 'a,
-  RcParser<'a, I, B, G>: Parser<'a, I, B> + 'a, // P2 for skip_right
-  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, // RcParser bound
-  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a, // RcParser bound
+  RcParser<'a, I, B, G>: Parser<'a, I, B> + 'a,
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
 {
-  // Define Output type directly using impl Trait
   type Output = impl Parser<'a, I, A>;
 
   fn sub(self, rhs: &'a RcParser<'a, I, B, G>) -> Self::Output {
-    // skip_right takes self, matching fn sub(self, ...)
     self.skip_right(rhs)
   }
 }
