@@ -28,7 +28,7 @@ pub trait Parser<'a, I: 'a, A>: Sized + 'a {
 }
 
 pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A) -> impl Parser<'a, I, A> {
-  RcParser::new(move |parse_context: ParseContext<'a, I>| ParseResult::successful(parse_context, value.clone(), 0))
+  RcParser::new(move |parse_context| ParseResult::successful(parse_context, value.clone(), 0))
 }
 
 // --- RcParser (Try without changes first) ---
