@@ -10,19 +10,19 @@ pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + A
   /// Sequential parser (discard first parser result) - implemented using and_then + map
   fn skip_left<P2, B>(self, p2: P2) -> impl Parser<'a, I, B>
   where
-    Self: Clone + 'a,
-    A: Clone + 'a,
+    Self: 'a,
+    A: 'a,
     B: Clone + 'a,
-    P2: Parser<'a, I, B> + Clone + 'a, {
+    P2: Parser<'a, I, B> + 'a, {
     self.and_then(p2).map(move |(_, b)| b)
   }
 
   /// Sequential parser (discard second parser result) - implemented using and_then + map
   fn skip_right<B, P2>(self, p2: P2) -> impl Parser<'a, I, A>
   where
-    Self: Clone + 'a,
+    Self: 'a,
     A: Clone + 'a,
-    B: Clone + 'a,
+    B: 'a,
     P2: Parser<'a, I, B> + 'a, {
     self.and_then(p2).map(move |(a, _)| a)
   }

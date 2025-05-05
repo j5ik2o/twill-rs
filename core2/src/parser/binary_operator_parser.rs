@@ -60,7 +60,7 @@ where
     ) -> impl Parser<'a, I, A>
     where
       A: Clone + 'a,
-      OP: Fn(A, A) -> A + Clone + 'a, {
+      OP: Fn(A, A) -> A + 'a, {
       let default_value = x.clone();
       RcParser::new(move |parse_context| match op_rc_parser.run(parse_context) {
         ParseResult::Success {
