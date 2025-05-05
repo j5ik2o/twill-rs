@@ -9,7 +9,7 @@ use crate::parser::{Parser, SkipParser};
 /// # Example
 ///
 /// ```rust
-/// # use twill_core2::prelude::*;
+/// # use twill_core::prelude::*;
 /// # use std::iter::FromIterator;
 ///
 /// let text: &str = "(abc)";

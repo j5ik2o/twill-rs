@@ -1,6 +1,4 @@
-use crate::core::element::Element;
-use crate::core::parser::FnParser;
-use crate::core::{ClonableParser, ParseError, ParseResult};
+use crate::prelude::*;
 
 /// Returns a [ClonableParser] that returns an element of the specified length.
 ///
@@ -22,17 +20,18 @@ use crate::core::{ClonableParser, ParseError, ParseResult};
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take<'a, I: 'a>(n: usize) -> impl ClonableParser<'a, I, &'a [I]> {
-  FnParser::new(move |parse_context| {
+pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> {
+  RcParser::new(move |parse_context| {
     let input = parse_context.input();
     if input.len() >= n {
       let value = parse_context.slice_with_len(n);
       ParseResult::successful(parse_context, value, n)
     } else {
-      ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context))
+      ParseResult::failed_with_uncommitted(parse_context, ParseError::of_in_complete())
     }
   })
 }
+
 /// Returns a [ClonableParser] that returns elements, while the result of the closure is true.
 ///
 /// The length of the analysis result is not required.
@@ -56,11 +55,11 @@ pub fn take<'a, I: 'a>(n: usize) -> impl ClonableParser<'a, I, &'a [I]> {
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_while0<'a, I, F>(f: F) -> impl ClonableParser<'a, I, &'a [I]>
+pub fn take_while0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  FnParser::new(move |parse_context| {
+  RcParser::new(move |parse_context| {
     let input = parse_context.input();
     let mut start: Option<usize> = None;
     let mut len = 0;
@@ -106,11 +105,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_while1<'a, I, F>(f: F) -> impl ClonableParser<'a, I, &'a [I]>
+pub fn take_while1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  FnParser::new(move |parse_context| {
+  RcParser::new(move |parse_context| {
     let input = parse_context.input();
     let mut start: Option<usize> = None;
     let mut len = 0;
@@ -126,7 +125,7 @@ where
     }
     match start {
       Some(s) => ParseResult::successful(parse_context, &input[s..s + len], len),
-      None => ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context)),
+      None => ParseResult::failed_with_uncommitted(parse_context, ParseError::of_in_complete()),
     }
   })
 }
@@ -154,11 +153,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_while_n_m<'a, I, F>(n: usize, m: usize, f: F) -> impl ClonableParser<'a, I, &'a [I]>
+pub fn take_while_n_m<'a, I, F>(n: usize, m: usize, f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  FnParser::new(move |parse_context| {
+  RcParser::new(move |parse_context| {
     let input = parse_context.input();
     let mut start: Option<usize> = None;
     let mut len = 0;
@@ -178,10 +177,10 @@ where
         if n <= str.len() && str.len() <= m {
           ParseResult::successful(parse_context, str, len)
         } else {
-          ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context))
+          ParseResult::failed_with_uncommitted(parse_context, ParseError::of_in_complete())
         }
       }
-      None => ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context)),
+      None => ParseResult::failed_with_uncommitted(parse_context, ParseError::of_in_complete()),
     }
   })
 }
@@ -206,11 +205,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_till0<'a, I, F>(f: F) -> impl ClonableParser<'a, I, &'a [I]>
+pub fn take_till0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  FnParser::new(move |parse_context| {
+  RcParser::new(move |parse_context| {
     let input = parse_context.input();
     let mut index = 0;
     let mut b = false;
@@ -251,11 +250,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_till1<'a, I, F>(f: F) -> impl ClonableParser<'a, I, &'a [I]>
+pub fn take_till1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  FnParser::new(move |parse_context| {
+  RcParser::new(move |parse_context| {
     let input = parse_context.input();
     let mut index = 0;
     let mut b = false;
@@ -270,7 +269,7 @@ where
       let value = parse_context.slice_with_len(index + 1);
       ParseResult::successful(parse_context, value, index + 1)
     } else {
-      ParseResult::failed_with_uncommitted(ParseError::of_in_complete(parse_context))
+      ParseResult::failed_with_uncommitted(parse_context, ParseError::of_in_complete())
     }
   })
 }

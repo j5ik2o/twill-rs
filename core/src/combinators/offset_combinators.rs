@@ -7,7 +7,7 @@ use crate::prelude::*;
 /// # Example
 ///
 /// ```rust
-/// # use twill_core2::prelude::*;
+/// # use twill_core::prelude::*;
 /// # use std::iter::FromIterator;
 /// use twill_core2::combinators::tag;
 ///
