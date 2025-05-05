@@ -31,5 +31,8 @@ mod tests {
     println!("{:?}", result);
 
     assert!(result.is_ok());
-   }
+    let (a, b) = result.unwrap();
+    assert_eq!(*a, 'a');
+    assert_eq!(*b, 'b');
+  }
 }

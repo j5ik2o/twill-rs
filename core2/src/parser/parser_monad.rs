@@ -23,7 +23,11 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
     P: Parser<'a, I, B> + 'a,
     F: Fn(A) -> P + 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
-      ParseResult::Success { parse_context, value: a, length: n } => {
+      ParseResult::Success {
+        parse_context,
+        value: a,
+        length: n,
+      } => {
         let ps = parse_context.advance(n);
         f(a).run(ps).with_committed_fallback(n != 0).with_add_length(n)
       }
@@ -38,3 +42,32 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
 
 /// Provide extension methods to all parsers
 impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+
+#[cfg(test)]
+mod tests {
+  use crate::prelude::*;
+
+  #[test]
+  fn test_map() {
+    let text: &str = "a";
+    let input = text.chars().collect::<Vec<_>>();
+    let p = elm_ref('a').map(|_| 'b');
+
+    let result = p.parse(&input).to_result();
+    println!("{:?}", result);
+
+    assert!(result.is_ok());
+  }
+
+  #[test]
+  fn test_flat_map() {
+    let text: &str = "a";
+    let input = text.chars().collect::<Vec<_>>();
+    let p = elm_ref('a').flat_map(|_| successful('b'));
+
+    let result = p.parse(&input).to_result();
+    println!("{:?}", result);
+
+    assert!(result.is_ok());
+  }
+}

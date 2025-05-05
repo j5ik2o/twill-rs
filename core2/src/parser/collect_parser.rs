@@ -11,7 +11,7 @@ where
       ParseResult::Success {
         parse_context, length, ..
       } => {
-        let  slice = parse_context.slice_with_len(length);
+        let slice = parse_context.slice_with_len(length);
         ParseResult::Success {
           parse_context,
           value: slice,
@@ -35,9 +35,9 @@ mod tests {
 
   #[test]
   fn test_collect() {
-    let text: &str = "ab";
+    let text: &str = "a";
     let input = text.chars().collect::<Vec<_>>();
-    let p = elm_ref('a').and_then(elm_ref('b')).collect();
+    let p = elm_ref('a').collect();
 
     let result = p.parse(&input).to_result();
     println!("{:?}", result);

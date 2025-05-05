@@ -13,14 +13,14 @@ pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + A
     Self: Clone + 'a,
     A: Clone + 'a,
     B: Clone + 'a,
-    P2: Parser<'a, I, B> +  Clone + 'a, {
+    P2: Parser<'a, I, B> + Clone + 'a, {
     self.and_then(p2).map(move |(_, b)| b)
   }
 
   /// Sequential parser (discard second parser result) - implemented using and_then + map
   fn skip_right<B, P2>(self, p2: P2) -> impl Parser<'a, I, A>
   where
-      Self: Clone + 'a,
+    Self: Clone + 'a,
     A: Clone + 'a,
     B: Clone + 'a,
     P2: Parser<'a, I, B> + 'a, {
@@ -73,7 +73,7 @@ mod tests {
 
   #[test]
   fn test_skip_left() {
-    let text = "(abc)";
+    let text = "(abc";
     let input = text.chars().collect::<Vec<_>>();
 
     // '('をパースした後、"abc"をパースし、"abc"の結果を返す
@@ -114,7 +114,7 @@ mod tests {
     let right = elm_ref(')');
 
     // surroundをskip_leftとskip_rightで手動で実装
-    let parser = left.skip_left(middle).skip_right(right);
+    let parser = left.skip_left(middle.skip_right(right));
 
     let result = parser.parse(&input);
 

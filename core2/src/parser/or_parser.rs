@@ -10,17 +10,15 @@ where
   where
     A: 'a,
     P: Parser<'a, I, A> + 'a, {
-    RcParser::new(
-      move |parse_context: ParseContext<'a, I>| {
-        let result = self.run(parse_context.with_same_state());
-        if let Some(committed_status) = result.committed_status() {
-          if committed_status.is_uncommitted() {
-            return other.run(parse_context);
-          }
+    RcParser::new(move |parse_context: ParseContext<'a, I>| {
+      let result = self.run(parse_context.with_same_state());
+      if let Some(committed_status) = result.committed_status() {
+        if committed_status.is_uncommitted() {
+          return other.run(parse_context);
         }
-        result
-      },
-    )
+      }
+      result
+    })
   }
 }
 
@@ -33,7 +31,6 @@ mod tests {
 
   #[test]
   fn test_or() {
-
     {
       let text: &str = "a";
       let input = text.chars().collect::<Vec<_>>();
