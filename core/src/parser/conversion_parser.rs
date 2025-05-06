@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::fmt::Debug;
 
 pub trait ConversionParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized {
-  fn map_res<B, E, F>(self, f: F) -> impl Parser<'a, I, B>
+  fn map_res<B, E, F>(self, f: F) -> RcParser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
     F: Fn(A) -> Result<B, E> + 'a,
     E: Debug,

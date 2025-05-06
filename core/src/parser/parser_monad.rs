@@ -1,4 +1,5 @@
 use crate::combinators::successful;
+use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
 use crate::parser::{Parser, RcParser};
 
@@ -6,7 +7,7 @@ use crate::parser::{Parser, RcParser};
 pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   /// Transform success result (consuming self)
   #[inline(always)]
-  fn map<F, B>(self, f: F) -> impl Parser<'a, I, B>
+  fn map<F, B>(self, f: F) -> RcParser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
     A: 'a,
     B: Clone + 'a,
@@ -16,7 +17,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
 
   /// Chain parsers (consuming self)
   #[inline(always)]
-  fn flat_map<F, P, B>(self, f: F) -> impl Parser<'a, I, B>
+  fn flat_map<F, P, B>(self, f: F) -> RcParser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
     A: 'a,
     B: 'a,
@@ -28,8 +29,11 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
         value: a,
         length: n,
       } => {
+        println!("1) parse_context.offset = {}", parse_context.offset());
         let ps = parse_context.advance(n);
-        f(a).run(ps).with_committed_fallback(n != 0).with_add_length(n)
+        let result = f(a).run(ps).with_committed_fallback(n != 0).with_add_length(n);
+        println!("2) parse_context.offset = {}", parse_context.offset());
+        result
       }
       ParseResult::Failure {
         parse_context,

@@ -1,3 +1,4 @@
+use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
 use crate::parser::{OrParser, Parser, ParserMonad, RcParser};
 use crate::prelude::successful;
@@ -7,7 +8,10 @@ pub trait BinaryOperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a,
 where
   Self: 'a, {
   /// Right associative binary operator parsing
-  fn chain_right1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
+  fn chain_right1<P2, OP>(
+    self,
+    op: P2,
+  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
@@ -17,7 +21,10 @@ where
   }
 
   /// Left associative binary operator parsing
-  fn chain_left1<P2, OP>(self, op: P2) -> impl Parser<'a, I, A>
+  fn chain_left1<P2, OP>(
+    self,
+    op: P2,
+  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
@@ -27,7 +34,11 @@ where
   }
 
   /// Right associative binary operator parsing helper
-  fn rest_right1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
+  fn rest_right1<P2, OP>(
+    self,
+    op: P2,
+    x: A,
+  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
@@ -47,7 +58,11 @@ where
   /// This method takes an operator parser and a default value and
   /// returns a parser that repeatedly applies the left associative operation on
   /// the parsed values or returns the default value if no operations can be applied.
-  fn rest_left1<P2, OP>(self, op: P2, x: A) -> impl Parser<'a, I, A>
+  fn rest_left1<P2, OP>(
+    self,
+    op: P2,
+    x: A,
+  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
@@ -57,7 +72,7 @@ where
       rc_parser: impl Parser<'a, I, A> + Clone + 'a,
       op_rc_parser: impl Parser<'a, I, OP> + Clone + 'a,
       x: A,
-    ) -> impl Parser<'a, I, A>
+    ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
     where
       A: Clone + 'a,
       OP: Fn(A, A) -> A + 'a, {

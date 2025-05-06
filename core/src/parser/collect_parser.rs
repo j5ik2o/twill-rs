@@ -1,16 +1,22 @@
+use std::fmt::Debug;
+use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
 use crate::parser::{Parser, RcParser};
 
 pub trait CollectParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn collect(self) -> impl Parser<'a, I, &'a [I]>
+  #[inline]
+  fn collect(self) -> RcParser<'a, I, &'a [I], impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a [I]> + 'a>
   where
-    A: 'a, {
+    I : Debug + 'a,
+    A: Debug + 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         parse_context, length, ..
       } => {
+        println!("length: {}", length);
+        println!("parse_context: {:?}", parse_context);
         let slice = parse_context.slice_with_len(length);
         ParseResult::Success {
           parse_context,

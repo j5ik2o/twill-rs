@@ -3,7 +3,7 @@ use crate::prelude::*;
 pub trait OffsetParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn last_offset(self) -> impl Parser<'a, I, usize> {
+  fn last_offset(self) -> RcParser<'a, I, usize, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, usize> + 'a> {
     RcParser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         mut parse_context,

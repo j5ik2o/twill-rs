@@ -9,7 +9,6 @@ use crate::prelude::*;
 /// ```rust
 /// # use twill_core::prelude::*;
 /// # use std::iter::FromIterator;
-/// use twill_core2::combinators::tag;
 ///
 /// let text: &str = "abcdef";
 /// let input = text.chars().collect::<Vec<_>>();

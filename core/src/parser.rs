@@ -30,6 +30,8 @@ pub use skip_parser::*;
 pub use transform_parser::*;
 
 pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
+  // type P<'p, XI: 'p, XA, XF> = RcParser<'p, XI, XA, XF> where XF: Fn(ParseContext<'p, XI>) -> ParseResult<'p, XI, XA> + 'p;
+
   fn run(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
 
   fn parse(&self, input: &'a [I]) -> ParseResult<'a, I, A> {
@@ -38,7 +40,7 @@ pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
   }
 }
 
-pub(crate) struct RcParser<'a, I: 'a, A, F>
+pub struct RcParser<'a, I: 'a, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: Rc<F>,

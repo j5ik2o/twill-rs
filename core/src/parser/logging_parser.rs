@@ -12,7 +12,7 @@ pub enum LogLevel {
 pub trait LoggingParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn name(self, name: &'a str) -> impl Parser<'a, I, A>
+  fn name(self, name: &'a str) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context) {
@@ -35,7 +35,7 @@ where
     })
   }
 
-  fn expect(self, name: &'a str) -> impl Parser<'a, I, A>
+  fn expect(self, name: &'a str) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: 'a, {
     RcParser::new(move |parse_context| match self.run(parse_context.with_same_state()) {

@@ -1,4 +1,5 @@
 use crate::parse_context::ParseContext;
+use crate::parse_result::ParseResult;
 use crate::parser::{Parser, RcParser};
 
 /// Provide alternative parser operations
@@ -6,7 +7,7 @@ pub trait OrParser<'a, I: 'a, A>: Parser<'a, I, A>
 where
   Self: 'a, {
   /// Try a dynamically generated parser if the first fails
-  fn or<P>(self, other: P) -> impl Parser<'a, I, A>
+  fn or<P>(self, other: P) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: 'a,
     P: Parser<'a, I, A> + 'a, {

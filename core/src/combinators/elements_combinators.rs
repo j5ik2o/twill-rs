@@ -22,9 +22,9 @@ use std::fmt::{Debug, Display};
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), &input[0]);
 /// ```
-pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> impl Parser<'a, I, &'a I>
+pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> RcParser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  F: Fn(&'a I) -> bool + Clone + 'a,
+  F: Fn(&'a I) -> bool + 'a,
   I: PartialEq + 'a, {
   RcParser::new(move |mut parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
@@ -40,6 +40,13 @@ where
     let pe = ParseError::of_mismatch(input, offset, 1, msg);
     ParseResult::failed_with_uncommitted(parse_context, pe)
   })
+}
+
+pub fn elm_pred<'a, I: 'a, F>(f: F) -> impl Parser<'a, I, I>
+where
+  F: Fn(&'a I) -> bool + 'a,
+  I: PartialEq + Clone + 'a, {
+  elm_pred_ref(f).map(Clone::clone)
 }
 
 /// Returns a [ClonableParser] that parses the specified element.(for reference)
@@ -61,7 +68,7 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(*result.success().unwrap(), input[0]);
 /// ```
-pub fn elm_ref<'a, I>(element: I) -> impl Parser<'a, I, &'a I>
+pub fn elm_ref<'a, I>(element: I) -> RcParser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: PartialEq + Clone + 'a, {
   elm_pred_ref(move |actual| *actual == element.clone())
@@ -77,6 +84,10 @@ pub fn elm_space_ref<'a, I>() -> impl Parser<'a, I, &'a I>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_space)
+}
+
+pub fn elm_space<'a, I: Element + PartialEq + Clone + 'a>() -> RcParser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a> {
+  elm_space_ref().map(Clone::clone)
 }
 
 pub fn elm_multi_space_ref<'a, I>() -> impl Parser<'a, I, &'a I>
@@ -330,7 +341,7 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn seq<'a, 'b, I>(seq: &'b [I]) -> impl Parser<'a, I, Vec<I>>
+pub fn seq<'a, 'b, I>(seq: &'b [I]) -> RcParser<'a, I, &'a [I], impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a [I]> + 'a>
 where
   I: PartialEq + Debug + Clone + 'a,
   'b: 'a, {
@@ -339,7 +350,7 @@ where
     let mut index = 0;
     loop {
       if index == seq.len() {
-        return ParseResult::successful(parse_context, seq.to_vec(), index);
+        return ParseResult::successful(parse_context, seq, index);
       }
       if let Some(str) = input.get(index) {
         if seq[index] != *str {
@@ -377,7 +388,7 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn tag<'a, 'b>(tag: &'b str) -> impl Parser<'a, char, String>
+pub fn tag<'a, 'b>(tag: &'b str) -> RcParser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
 where
   'b: 'a, {
   RcParser::new(move |mut parse_context| {

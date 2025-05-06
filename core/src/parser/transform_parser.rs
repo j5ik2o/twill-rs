@@ -9,14 +9,14 @@ pub trait TransformParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A
 where
   Self: 'a, {
   /// Discard the result and return ()
-  fn discard(self) -> impl Parser<'a, I, ()>
+  fn discard(self) -> RcParser<'a, I, (), impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, ()> + 'a>
   where
     A: Clone + 'a, {
     self.map(|_| ())
   }
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
-  fn not(self) -> impl Parser<'a, I, ()>
+  fn not(self) -> RcParser<'a, I, (), impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, ()> + 'a>
   where
     Self: Sized,
     I: 'a, {

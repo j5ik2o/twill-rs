@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use crate::prelude::*;
 
 /// Returns a [ClonableParser] that returns an element of the specified length.
@@ -20,7 +21,7 @@ use crate::prelude::*;
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> {
+pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> where I: Debug{
   RcParser::new(move |parse_context| {
     let input = parse_context.input();
     if input.len() >= n {

@@ -4,7 +4,10 @@ use crate::util::{Bound, RangeArgument};
 pub trait RepeatParser<'a, I: 'a, A>: Parser<'a, I, A>
 where
   Self: 'a, {
-  fn repeat<R>(self, range: R) -> impl Parser<'a, I, Vec<A>>
+  fn repeat<R>(
+    self,
+    range: R,
+  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
     R: RangeArgument<usize> + 'a,
@@ -13,7 +16,7 @@ where
     self.repeat_sep(range, none_separator)
   }
 
-  fn of_many0(self) -> impl Parser<'a, I, Vec<A>>
+  fn of_many0(self) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
     A: 'a, {
@@ -21,7 +24,7 @@ where
     self.repeat_sep(0.., none_separator)
   }
 
-  fn of_many1(self) -> impl Parser<'a, I, Vec<A>>
+  fn of_many1(self) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
     A: 'a, {
@@ -29,7 +32,10 @@ where
     self.repeat_sep(1.., none_separator)
   }
 
-  fn count(self, count: usize) -> impl Parser<'a, I, Vec<A>>
+  fn count(
+    self,
+    count: usize,
+  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
     A: 'a, {
@@ -37,7 +43,10 @@ where
     self.repeat_sep(count..=count, none_separator)
   }
 
-  fn of_many0_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
+  fn of_many0_sep<P2, B>(
+    self,
+    separator: P2,
+  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
     P2: Parser<'a, I, B> + 'a,
@@ -46,7 +55,10 @@ where
     self.repeat_sep(0.., Some(separator))
   }
 
-  fn of_many1_sep<P2, B>(self, separator: P2) -> impl Parser<'a, I, Vec<A>>
+  fn of_many1_sep<P2, B>(
+    self,
+    separator: P2,
+  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
     P2: Parser<'a, I, B> + 'a,
@@ -55,7 +67,11 @@ where
     self.repeat_sep(1.., Some(separator))
   }
 
-  fn repeat_sep<P2, B, R>(self, range: R, separator_opt: Option<P2>) -> impl Parser<'a, I, Vec<A>>
+  fn repeat_sep<P2, B, R>(
+    self,
+    range: R,
+    separator_opt: Option<P2>,
+  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     R: RangeArgument<usize> + 'a,
     A: 'a,

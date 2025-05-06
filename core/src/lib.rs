@@ -1,6 +1,8 @@
 #![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
-pub mod combinators;
+#![feature(associated_type_defaults)]
+
+mod combinators;
 mod committed_status;
 mod element;
 mod parse_context;

@@ -8,21 +8,21 @@ use std::ops::{Mul, Sub};
 /// Trait providing sequence-related parser operations (consuming self)
 pub trait SkipParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + AndThenParser<'a, I, A> {
   /// Sequential parser (discard first parser result) - implemented using and_then + map
-  fn skip_left<P2, B>(self, p2: P2) -> impl Parser<'a, I, B>
+  fn skip_left<P2, B>(self, p2: P2) -> RcParser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
     Self: 'a,
-    A: 'a,
+    A: Clone + 'a,
     B: Clone + 'a,
     P2: Parser<'a, I, B> + 'a, {
     self.and_then(p2).map(move |(_, b)| b)
   }
 
   /// Sequential parser (discard second parser result) - implemented using and_then + map
-  fn skip_right<B, P2>(self, p2: P2) -> impl Parser<'a, I, A>
+  fn skip_right<B, P2>(self, p2: P2) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: 'a,
     A: Clone + 'a,
-    B: 'a,
+    B: Clone + 'a,
     P2: Parser<'a, I, B> + 'a, {
     self.and_then(p2).map(move |(a, _)| a)
   }

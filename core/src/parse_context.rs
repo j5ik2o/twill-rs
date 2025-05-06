@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 /// A structure to hold parsing context information
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ParseContext<'a, I> {
@@ -49,7 +51,8 @@ impl<'a, I> ParseContext<'a, I> {
   }
 
   /// Get a slice of specified length from the current position
-  pub fn slice_with_len(&self, n: usize) -> &'a [I] {
+  pub fn slice_with_len(&self, n: usize) -> &'a [I] where I: Debug {
+    println!("{:?}", self.input);
     &self.input[self.offset..self.offset + n]
   }
 
