@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::util::Set;
 use regex::Regex;
 use std::fmt::{Debug, Display};
+use log::log_enabled;
 
 /// Returns a [ClonableParser] that parses the elements that satisfy the specified closure conditions.(for reference)
 ///
@@ -22,11 +23,11 @@ use std::fmt::{Debug, Display};
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), &input[0]);
 /// ```
-pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> RcParser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   F: Fn(&'a I) -> bool + 'a,
-  I: PartialEq + 'a, {
-  RcParser::new(move |mut parse_context: ParseContext<'a, I>| {
+  I: PartialEq + Debug + 'a, {
+  Parser::new(move |parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
     if let Some(actual) = input.first() {
       if f(actual) {
@@ -35,17 +36,17 @@ where
     }
     let offset = parse_context.offset();
     let msg = format!("offset: {}", offset);
-    parse_context.next_mut();
+    let pc = parse_context.with_next_offset();
     let input = parse_context.input();
-    let pe = ParseError::of_mismatch(input, offset, 1, msg);
+    let pe = ParseError::of_mismatch(input,  pc.offset(), 1, msg);
     ParseResult::failed_with_uncommitted(parse_context, pe)
   })
 }
 
-pub fn elm_pred<'a, I: 'a, F>(f: F) -> impl Parser<'a, I, I>
+pub fn elm_pred<'a, I: 'a, F>(f: F) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
 where
   F: Fn(&'a I) -> bool + 'a,
-  I: PartialEq + Clone + 'a, {
+  I: PartialEq + Debug + Clone + 'a, {
   elm_pred_ref(f).map(Clone::clone)
 }
 
@@ -68,53 +69,53 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(*result.success().unwrap(), input[0]);
 /// ```
-pub fn elm_ref<'a, I>(element: I) -> RcParser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_ref<'a, I>(element: I) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  I: PartialEq + Clone + 'a, {
+  I: PartialEq + Debug + Clone + 'a, {
   elm_pred_ref(move |actual| *actual == element.clone())
 }
 
-pub fn elm_any_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_any_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(|_| true)
 }
 
-pub fn elm_space_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_space_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_space)
 }
 
-pub fn elm_space<'a, I: Element + PartialEq + Clone + 'a>() -> RcParser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a> {
+pub fn elm_space<'a, I: Element + PartialEq + Clone + 'a>() -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a> {
   elm_space_ref().map(Clone::clone)
 }
 
-pub fn elm_multi_space_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_multi_space_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_multi_space)
 }
 
-pub fn elm_alpha_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_alpha_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_alpha)
 }
 
-pub fn elm_alpha_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_alpha_digit_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_alpha_digit)
 }
 
-pub fn elm_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_digit_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_digit)
 }
 
-pub fn elm_hex_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_hex_digit_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_hex_digit)
@@ -139,7 +140,7 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_oct_digit_ref<'a, I>() -> impl Parser<'a, I, &'a I>
+pub fn elm_oct_digit_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_oct_digit)
@@ -165,12 +166,12 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_of<'a, I, S>(set: &'a S) -> impl Parser<'a, I, &'a I>
+pub fn elm_ref_of<'a, I, S>(set: &'a S) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  I: PartialEq + Display + Clone + 'a,
+  I: PartialEq + Display + Debug + Clone + 'a,
   S: Set<I> + ?Sized, {
   let set_ptr = set as *const S;
-  RcParser::new(move |mut parse_context| {
+  Parser::new(move |parse_context| {
     let set = unsafe { &*set_ptr };
     let input = parse_context.input();
     if let Some(s) = input.first() {
@@ -178,10 +179,9 @@ where
         ParseResult::successful(parse_context, s, 1)
       } else {
         let msg = format!("expect one of: {}, found: {}", set.to_str(), s);
-        parse_context.next_mut();
+        let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let offset = parse_context.offset();
-        let pe = ParseError::of_mismatch(input, offset, 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -211,20 +211,19 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_in<'a, I>(start: I, end: I) -> impl Parser<'a, I, &'a I>
+pub fn elm_ref_in<'a, I>(start: I, end: I)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  I: PartialEq + PartialOrd + Display + Clone + 'a, {
-  RcParser::new(move |mut parse_context| {
+  I: PartialEq + PartialOrd + Display + Debug + Clone + 'a, {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     if let Some(s) = input.first() {
       if *s >= start && *s <= end {
         ParseResult::successful(parse_context, s, 1)
       } else {
         let msg = format!("expect elm of: {}..={}, found: {}", start, end, s);
-        parse_context.next_mut();
+        let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let offset = parse_context.offset();
-        let pe = ParseError::of_mismatch(input, offset, 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -254,21 +253,20 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_from_until<'a, I>(start: I, end: I) -> impl Parser<'a, I, &'a I>
+pub fn elm_ref_from_until<'a, I>(start: I, end: I)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  I: PartialEq + PartialOrd + Display + Clone + 'a, {
+  I: PartialEq + PartialOrd + Display + Debug + Clone + 'a, {
   // クローン可能なパーサーを実装
-  RcParser::new(move |mut parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     if let Some(s) = input.first() {
       if *s >= start && *s < end {
         ParseResult::successful(parse_context, s, 1)
       } else {
         let msg = format!("expect elm from {} until {}, found: {}", start, end, s);
-        parse_context.next_mut();
+        let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let offset = parse_context.offset();
-        let pe = ParseError::of_mismatch(input, offset, 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -297,12 +295,12 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn none_ref_of<'a, I, S>(set: &'a S) -> impl Parser<'a, I, &'a I>
+pub fn none_ref_of<'a, I, S>(set: &'a S)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  I: PartialEq + Display + Clone + 'a,
+  I: PartialEq + Display + Debug + Clone + 'a,
   S: Set<I> + ?Sized, {
   let set_ptr = set as *const S;
-  RcParser::new(move |mut parse_context| {
+  Parser::new(move |parse_context| {
     let set = unsafe { &*set_ptr };
     let input = parse_context.input();
     if let Some(s) = input.first() {
@@ -310,10 +308,9 @@ where
         ParseResult::successful(parse_context, s, 1)
       } else {
         let msg = format!("expect none of: {}, found: {}", set.to_str(), s);
-        parse_context.next_mut();
+        let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let offset = parse_context.offset();
-        let pe = ParseError::of_mismatch(input, offset, 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -341,11 +338,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn seq<'a, 'b, I>(seq: &'b [I]) -> RcParser<'a, I, &'a [I], impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a [I]> + 'a>
+pub fn seq<'a, 'b, I>(seq: &'b [I]) -> Parser<'a, I, &'a [I], impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a [I]> + 'a>
 where
   I: PartialEq + Debug + Clone + 'a,
   'b: 'a, {
-  RcParser::new(move |mut parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     let mut index = 0;
     loop {
@@ -355,10 +352,9 @@ where
       if let Some(str) = input.get(index) {
         if seq[index] != *str {
           let msg = format!("seq {:?} expect: {:?}, found: {:?}", seq, seq[index], str);
-          parse_context.advance_mut(index);
+          let pc = parse_context.advance(index);
           let input = parse_context.input();
-          let offset = parse_context.offset();
-          let pe = ParseError::of_mismatch(input, offset, index, msg);
+          let pe = ParseError::of_mismatch(input, pc.offset(), index, msg);
           return ParseResult::failed(parse_context, pe, (index != 0).into());
         }
       } else {
@@ -388,20 +384,19 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn tag<'a, 'b>(tag: &'b str) -> RcParser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
+pub fn tag<'a, 'b>(tag: &'b str) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
 where
   'b: 'a, {
-  RcParser::new(move |mut parse_context| {
+  Parser::new(move |parse_context| {
     let input: &[char] = parse_context.input();
     let mut index = 0;
     for c in tag.chars() {
       if let Some(&actual) = input.get(index) {
         if c != actual {
           let msg = format!("tag {:?} expect: {:?}, found: {}", tag, c, actual);
-          parse_context.advance_mut(index);
+          let pc = parse_context.advance(index);
           let input = parse_context.input();
-          let offset = parse_context.offset();
-          let pe = ParseError::of_mismatch(input, offset, index, msg);
+          let pe = ParseError::of_mismatch(input, pc.offset(), index, msg);
           return ParseResult::failed(parse_context, pe, (index != 0).into());
         }
       } else {
@@ -432,10 +427,10 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn tag_no_case<'a, 'b>(tag: &'b str) -> impl Parser<'a, char, String>
+pub fn tag_no_case<'a, 'b>(tag: &'b str) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
 where
   'b: 'a, {
-  RcParser::new(move |parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     let mut index = 0;
     for c in tag.chars() {
@@ -475,14 +470,14 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn regex<'a>(pattern: &str) -> impl Parser<'a, char, String> {
+pub fn regex<'a>(pattern: &str) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a> {
   let pattern = if !pattern.starts_with("^") {
     format!("^{}", pattern)
   } else {
     pattern.to_string()
   };
   let regex = Regex::new(&pattern).unwrap();
-  RcParser::new(move |parse_context| {
+  Parser::new(move |parse_context| {
     let input: &[char] = parse_context.input();
     log::debug!("regex: input = {:?}", input);
     let str = String::from_iter(input);

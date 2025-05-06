@@ -9,13 +9,13 @@ pub enum LogLevel {
   Err,
 }
 
-pub trait LoggingParser<'a, I: 'a, A>: Parser<'a, I, A> + Sized
+pub trait LoggingParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + Sized
 where
   Self: 'a, {
-  fn name(self, name: &'a str) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  fn name(self, name: &'a str) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: 'a, {
-    RcParser::new(move |parse_context| match self.run(parse_context) {
+    Parser::new(move |parse_context| match self.run(parse_context) {
       res @ ParseResult::Success { .. } => res,
       ParseResult::Failure {
         parse_context,
@@ -35,10 +35,10 @@ where
     })
   }
 
-  fn expect(self, name: &'a str) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  fn expect(self, name: &'a str) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: 'a, {
-    RcParser::new(move |parse_context| match self.run(parse_context.with_same_state()) {
+    Parser::new(move |parse_context| match self.run(parse_context.with_same_state()) {
       res @ ParseResult::Success { .. } => res,
       ParseResult::Failure {
         parse_context,
@@ -55,18 +55,18 @@ where
     })
   }
 
-  fn log<B, F>(self, name: &'a str, log_level: LogLevel) -> impl Parser<'a, I, A>
+  fn log<B, F>(self, name: &'a str, log_level: LogLevel) -> impl ParserRunner<'a, I, A>
   where
     A: Display + 'a, {
     self.log_map(name, log_level, |pr| format!("{}", pr))
   }
 
-  fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> impl Parser<'a, I, A>
+  fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> impl ParserRunner<'a, I, A>
   where
     A: 'a,
     F: Fn(&ParseResult<'a, I, A>) -> B + 'a,
     B: Display + 'a, {
-    RcParser::new(move |parse_context| {
+    Parser::new(move |parse_context| {
       let pr = self.run(parse_context);
       let s = format!("{} = {}", name, f(&pr));
       match log_level {
@@ -80,4 +80,4 @@ where
   }
 }
 
-impl<'a, T, I: 'a, A: Clone + 'a> LoggingParser<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A: Clone + 'a> LoggingParser<'a, I, A> for T where T: ParserRunner<'a, I, A> + 'a {}

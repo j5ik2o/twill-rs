@@ -1,26 +1,27 @@
+use std::fmt::Debug;
 use crate::parse_context::ParseContext;
 use crate::parse_error::ParseError;
 use crate::parse_result::ParseResult;
 use crate::parser::parser_monad::ParserMonad;
-use crate::parser::{Parser, RcParser};
+use crate::parser::{ParserRunner, Parser};
 
 /// Trait providing result transformation operations for parsers
-pub trait TransformParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + Sized
+pub trait TransformParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + ParserMonad<'a, I, A> + Sized
 where
   Self: 'a, {
   /// Discard the result and return ()
-  fn discard(self) -> RcParser<'a, I, (), impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, ()> + 'a>
+  fn discard(self) -> Parser<'a, I, (), impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, ()> + 'a>
   where
     A: Clone + 'a, {
     self.map(|_| ())
   }
 
   /// Negation parser - succeeds when self fails, fails when self succeeds
-  fn not(self) -> RcParser<'a, I, (), impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, ()> + 'a>
+  fn not(self) -> Parser<'a, I, (), impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, ()> + 'a>
   where
     Self: Sized,
-    I: 'a, {
-    RcParser::new(
+    I: Debug + 'a, {
+    Parser::new(
       move |parse_context: ParseContext<'a, I>| match self.run(parse_context) {
         ParseResult::Success { parse_context, .. } => {
           let len = parse_context.last_offset().unwrap_or(0);
@@ -39,4 +40,4 @@ where
 }
 
 /// Implement TransformParser for all types that implement Parser and ParserMonad
-impl<'a, T, I: 'a, A> TransformParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A> TransformParser<'a, I, A> for T where T: ParserRunner<'a, I, A> + ParserMonad<'a, I, A> + 'a {}

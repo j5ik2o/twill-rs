@@ -1,13 +1,12 @@
 use crate::combinators::successful;
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{Parser, RcParser};
+use crate::parser::{ParserRunner, Parser};
 
 /// Trait providing parser transformation methods (consuming self)
-pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
+pub trait ParserMonad<'a, I: 'a, A>: ParserRunner<'a, I, A> {
   /// Transform success result (consuming self)
-  #[inline(always)]
-  fn map<F, B>(self, f: F) -> RcParser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
+  fn map<F, B>(self, f: F) -> Parser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
     A: 'a,
     B: Clone + 'a,
@@ -16,14 +15,13 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
   }
 
   /// Chain parsers (consuming self)
-  #[inline(always)]
-  fn flat_map<F, P, B>(self, f: F) -> RcParser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
+  fn flat_map<F, P, B>(self, f: F) -> Parser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
     A: 'a,
     B: 'a,
-    P: Parser<'a, I, B> + 'a,
+    P: ParserRunner<'a, I, B> + 'a,
     F: Fn(A) -> P + 'a, {
-    RcParser::new(move |parse_context| match self.run(parse_context) {
+    Parser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
         parse_context,
         value: a,
@@ -45,7 +43,7 @@ pub trait ParserMonad<'a, I: 'a, A>: Parser<'a, I, A> {
 }
 
 /// Provide extension methods to all parsers
-impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: Parser<'a, I, A> + 'a {}
+impl<'a, T, I: 'a, A> ParserMonad<'a, I, A> for T where T: ParserRunner<'a, I, A> + 'a {}
 
 #[cfg(test)]
 mod tests {

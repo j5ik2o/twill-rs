@@ -32,28 +32,36 @@ impl<'a, I> ParseContext<'a, I> {
     Self::new(self.input, self.offset + n)
   }
 
-  pub fn advance_mut(&mut self, n: usize) {
-    self.offset += n;
-  }
+  // pub fn advance_mut(&mut self, n: usize) {
+  //   self.offset += n;
+  // }
 
   /// Create a new context by advancing exactly 1 position
-  pub fn next(&self) -> ParseContext<'a, I> {
+  pub fn with_next_offset(&self) -> ParseContext<'a, I> {
     Self::new(self.input, self.offset + 1)
   }
 
-  pub fn next_mut(&mut self) {
-    self.offset += 1;
-  }
+  // pub fn next_mut(&mut self) {
+  //   self.offset += 1;
+  // }
 
   /// Get the remaining input slice
-  pub fn input(&self) -> &'a [I] {
+  pub fn input(&self) -> &'a [I] where I: Debug {
+    println!("input = {:?}", self.input);
+    println!("offset = {:?}", self.offset);
     &self.input[self.offset..]
   }
 
   /// Get a slice of specified length from the current position
   pub fn slice_with_len(&self, n: usize) -> &'a [I] where I: Debug {
-    println!("{:?}", self.input);
+    println!("input = {:?}", self.input);
+    println!("offset = {:?}", self.offset);
+    println!("n = {:?}", n);
     &self.input[self.offset..self.offset + n]
+  }
+
+  pub fn slice_with_offset_len(&self, offset: usize, n: usize) -> &'a [I] where I: Debug {
+    &self.input[offset..offset + n]
   }
 
   /// Get the original input
@@ -81,7 +89,6 @@ impl<'a, I> ParseContext<'a, I> {
   }
 
   /// Create a new context with the same state (same input and offset)
-  #[inline]
   pub fn with_same_state(&self) -> Self {
     Self::new(self.input, self.offset)
   }

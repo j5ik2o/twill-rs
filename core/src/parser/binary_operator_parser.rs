@@ -1,22 +1,22 @@
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{OrParser, Parser, ParserMonad, RcParser};
+use crate::parser::{OrParser, ParserRunner, ParserMonad, Parser};
 use crate::prelude::successful;
 
 /// Trait providing binary operator related parser operations
-pub trait BinaryOperatorParser<'a, I: 'a, A>: Parser<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
+pub trait BinaryOperatorParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
 where
   Self: 'a, {
   /// Right associative binary operator parsing
   fn chain_right1<P2, OP>(
     self,
     op: P2,
-  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
-    P2: Parser<'a, I, OP> + Clone + 'a, {
+    P2: ParserRunner<'a, I, OP> + Clone + 'a, {
     self.clone().flat_map(move |x| self.clone().rest_right1(op.clone(), x))
   }
 
@@ -24,12 +24,12 @@ where
   fn chain_left1<P2, OP>(
     self,
     op: P2,
-  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
-    P2: Parser<'a, I, OP> + Clone + 'a, {
+    P2: ParserRunner<'a, I, OP> + Clone + 'a, {
     self.clone().flat_map(move |x| self.clone().rest_left1(op.clone(), x))
   }
 
@@ -38,12 +38,12 @@ where
     self,
     op: P2,
     x: A,
-  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
-    P2: Parser<'a, I, OP> + Clone + 'a, {
+    P2: ParserRunner<'a, I, OP> + Clone + 'a, {
     let default_value = x.clone();
     op.clone()
       .flat_map(move |f| {
@@ -62,35 +62,35 @@ where
     self,
     op: P2,
     x: A,
-  ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
     OP: Fn(A, A) -> A + Clone + 'a,
-    P2: Parser<'a, I, OP> + Clone + 'a, {
+    P2: ParserRunner<'a, I, OP> + Clone + 'a, {
     fn rest_left0<'a, I: 'a, A, OP>(
-      rc_parser: impl Parser<'a, I, A> + Clone + 'a,
-      op_rc_parser: impl Parser<'a, I, OP> + Clone + 'a,
+      rc_parser: impl ParserRunner<'a, I, A> + Clone + 'a,
+      op_rc_parser: impl ParserRunner<'a, I, OP> + Clone + 'a,
       x: A,
-    ) -> RcParser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+    ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
     where
       A: Clone + 'a,
       OP: Fn(A, A) -> A + 'a, {
       let default_value = x.clone();
-      RcParser::new(move |parse_context| match op_rc_parser.run(parse_context) {
+      Parser::new(move |parse_context| match op_rc_parser.run(parse_context) {
         ParseResult::Success {
           parse_context: mut pc1,
           value: f,
           length: n1,
         } => {
-          pc1.advance_mut(n1);
+          let pc1 = pc1.advance(n1);
           (match rc_parser.run(pc1) {
             ParseResult::Success {
               parse_context: mut pc2,
               value: y,
               length: n2,
             } => {
-              pc2.advance_mut(n2);
+              let pc2 = pc2.advance(n2);
               rest_left0(rc_parser.clone(), op_rc_parser.clone(), f(y, default_value.clone()))
                 .run(pc2)
                 .with_add_length(n2)
@@ -119,6 +119,6 @@ where
 
 /// Implement BinaryOperatorParser for all types that implement Parser, ParserMonad, ChoiceParser and Clone
 impl<'a, T, I: 'a, A> BinaryOperatorParser<'a, I, A> for T where
-  T: Parser<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A> + 'a
+  T: ParserRunner<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A> + 'a
 {
 }

@@ -21,8 +21,8 @@ use crate::prelude::*;
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> where I: Debug{
-  RcParser::new(move |parse_context| {
+pub fn take<'a, I: 'a>(n: usize) -> impl ParserRunner<'a, I, &'a [I]> where I: Debug{
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     if input.len() >= n {
       let value = parse_context.slice_with_len(n);
@@ -56,11 +56,11 @@ pub fn take<'a, I: 'a>(n: usize) -> impl Parser<'a, I, &'a [I]> where I: Debug{
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_while0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+pub fn take_while0<'a, I, F>(f: F) -> impl ParserRunner<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  RcParser::new(move |parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     let mut start: Option<usize> = None;
     let mut len = 0;
@@ -106,11 +106,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_while1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+pub fn take_while1<'a, I, F>(f: F) -> impl ParserRunner<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  RcParser::new(move |parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     let mut start: Option<usize> = None;
     let mut len = 0;
@@ -154,11 +154,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_while_n_m<'a, I, F>(n: usize, m: usize, f: F) -> impl Parser<'a, I, &'a [I]>
+pub fn take_while_n_m<'a, I, F>(n: usize, m: usize, f: F) -> impl ParserRunner<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  RcParser::new(move |parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     let mut start: Option<usize> = None;
     let mut len = 0;
@@ -206,11 +206,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_till0<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+pub fn take_till0<'a, I, F>(f: F) -> impl ParserRunner<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  RcParser::new(move |parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     let mut index = 0;
     let mut b = false;
@@ -251,11 +251,11 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn take_till1<'a, I, F>(f: F) -> impl Parser<'a, I, &'a [I]>
+pub fn take_till1<'a, I, F>(f: F) -> impl ParserRunner<'a, I, &'a [I]>
 where
   F: Fn(&I) -> bool + Clone + 'a,
   I: Element + 'a, {
-  RcParser::new(move |parse_context| {
+  Parser::new(move |parse_context| {
     let input = parse_context.input();
     let mut index = 0;
     let mut b = false;

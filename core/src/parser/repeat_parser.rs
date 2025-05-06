@@ -1,32 +1,36 @@
+use std::fmt::Debug;
 use crate::prelude::*;
 use crate::util::{Bound, RangeArgument};
 
-pub trait RepeatParser<'a, I: 'a, A>: Parser<'a, I, A>
+pub trait RepeatParser<'a, I: 'a, A>: ParserRunner<'a, I, A>
 where
   Self: 'a, {
   fn repeat<R>(
     self,
     range: R,
-  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
+  ) -> Parser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
+    I: Debug,
     R: RangeArgument<usize> + 'a,
     A: 'a, {
     let none_separator: Option<Self> = None;
     self.repeat_sep(range, none_separator)
   }
 
-  fn of_many0(self) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
+  fn of_many0(self) -> Parser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
+    I: Debug,
     A: 'a, {
     let none_separator: Option<Self> = None;
     self.repeat_sep(0.., none_separator)
   }
 
-  fn of_many1(self) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
+  fn of_many1(self) -> Parser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
+    I: Debug,
     A: 'a, {
     let none_separator: Option<Self> = None;
     self.repeat_sep(1.., none_separator)
@@ -35,9 +39,10 @@ where
   fn count(
     self,
     count: usize,
-  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
+  ) -> Parser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
+    I: Debug,
     A: 'a, {
     let none_separator: Option<Self> = None;
     self.repeat_sep(count..=count, none_separator)
@@ -46,10 +51,11 @@ where
   fn of_many0_sep<P2, B>(
     self,
     separator: P2,
-  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
+  ) -> Parser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
-    P2: Parser<'a, I, B> + 'a,
+    I: Debug,
+    P2: ParserRunner<'a, I, B> + 'a,
     A: 'a,
     B: 'a, {
     self.repeat_sep(0.., Some(separator))
@@ -58,10 +64,11 @@ where
   fn of_many1_sep<P2, B>(
     self,
     separator: P2,
-  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
+  ) -> Parser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
     Self: 'a,
-    P2: Parser<'a, I, B> + 'a,
+    I: Debug,
+    P2: ParserRunner<'a, I, B> + 'a,
     A: 'a,
     B: 'a, {
     self.repeat_sep(1.., Some(separator))
@@ -71,15 +78,16 @@ where
     self,
     range: R,
     separator_opt: Option<P2>,
-  ) -> RcParser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
+  ) -> Parser<'a, I, Vec<A>, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, Vec<A>> + 'a>
   where
+    I: Debug,
     R: RangeArgument<usize> + 'a,
     A: 'a,
     B: 'a,
-    P2: Parser<'a, I, B> + 'a, {
+    P2: ParserRunner<'a, I, B> + 'a, {
     let range_capture = range;
 
-    RcParser::new(move |parse_context| {
+    Parser::new(move |parse_context| {
       let mut all_length = 0;
       let mut items = vec![];
       let range = &range_capture;
@@ -192,7 +200,7 @@ where
   }
 }
 
-impl<'a, T, I: 'a, A> RepeatParser<'a, I, A> for T where T: Parser<'a, I, A> + ParserMonad<'a, I, A> {}
+impl<'a, T, I: 'a, A> RepeatParser<'a, I, A> for T where T: ParserRunner<'a, I, A> + ParserMonad<'a, I, A> {}
 
 // #[cfg(test)]
 // mod tests {

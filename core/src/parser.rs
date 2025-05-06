@@ -29,7 +29,7 @@ pub use repeat_parser::*;
 pub use skip_parser::*;
 pub use transform_parser::*;
 
-pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
+pub trait ParserRunner<'a, I: 'a, A>: Clone + Sized + 'a {
   // type P<'p, XI: 'p, XA, XF> = RcParser<'p, XI, XA, XF> where XF: Fn(ParseContext<'p, XI>) -> ParseResult<'p, XI, XA> + 'p;
 
   fn run(&self, parse_context: ParseContext<'a, I>) -> ParseResult<'a, I, A>;
@@ -40,14 +40,14 @@ pub trait Parser<'a, I: 'a, A>: Clone + Sized + 'a {
   }
 }
 
-pub struct RcParser<'a, I: 'a, A, F>
+pub struct Parser<'a, I: 'a, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
   parser_fn: Rc<F>,
   _phantom: PhantomData<(&'a I, A)>,
 }
 
-impl<'a, I: 'a, A, F> RcParser<'a, I, A, F>
+impl<'a, I: 'a, A, F> Parser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
@@ -59,7 +59,7 @@ where
   }
 }
 
-impl<'a, I: 'a, A, F> Parser<'a, I, A> for RcParser<'a, I, A, F>
+impl<'a, I: 'a, A, F> ParserRunner<'a, I, A> for Parser<'a, I, A, F>
 where
   A: 'a,
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
@@ -69,7 +69,7 @@ where
   }
 }
 
-impl<'a, I: 'a, A, F> Clone for RcParser<'a, I, A, F>
+impl<'a, I: 'a, A, F> Clone for Parser<'a, I, A, F>
 where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
 {
