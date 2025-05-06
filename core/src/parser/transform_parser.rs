@@ -27,7 +27,7 @@ where
           let len = parse_context.last_offset().unwrap_or(0);
           let parser_error = ParseError::of_mismatch(
             parse_context.input(),
-            parse_context.offset(),
+            parse_context.next_offset(),
             len,
             "not predicate failed".to_string(),
           );

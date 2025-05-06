@@ -79,18 +79,18 @@ where
       let default_value = x.clone();
       Parser::new(move |parse_context| match op_rc_parser.run(parse_context) {
         ParseResult::Success {
-          parse_context: mut pc1,
+          parse_context: pc1,
           value: f,
           length: n1,
         } => {
-          let pc1 = pc1.advance(n1);
+          let pc1 = pc1.add_offset(n1);
           (match rc_parser.run(pc1) {
             ParseResult::Success {
-              parse_context: mut pc2,
+              parse_context: pc2,
               value: y,
               length: n2,
             } => {
-              let pc2 = pc2.advance(n2);
+              let pc2 = pc2.add_offset(n2);
               rest_left0(rc_parser.clone(), op_rc_parser.clone(), f(y, default_value.clone()))
                 .run(pc2)
                 .with_add_length(n2)

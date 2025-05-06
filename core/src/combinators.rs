@@ -25,13 +25,13 @@ pub fn failed<'a, I: Clone + 'a, A: 'a>(
 pub fn end<'a, I: 'a>() -> Parser<'a, I, (), impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, ()> + 'a>
 where
   I: Display + Debug, {
-  Parser::new(move |mut parse_context: ParseContext<'a, I>| {
+  Parser::new(move |parse_context: ParseContext<'a, I>| {
     let input = parse_context.input();
     if let Some(actual) = input.first() {
       let msg = format!("expect end of input, found: {}", actual);
       let pc = parse_context.with_next_offset();
       let input = parse_context.input();
-      let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
+      let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
       ParseResult::failed_with_uncommitted(parse_context, pe)
     } else {
       ParseResult::successful(parse_context, (), 0)

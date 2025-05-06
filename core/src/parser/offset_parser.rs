@@ -6,11 +6,11 @@ where
   fn last_offset(self) -> Parser<'a, I, usize, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, usize> + 'a> {
     Parser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
-        mut parse_context,
+        parse_context,
         length,
         ..
       } => {
-        let pc = parse_context.advance(length);
+        let pc = parse_context.add_offset(length);
         let last_offset = pc.last_offset().unwrap_or(0);
         ParseResult::successful(parse_context, last_offset, length)
       }
@@ -25,13 +25,12 @@ where
   fn offset(self) -> Parser<'a, I, usize, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, usize> + 'a>  {
     Parser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
-        mut parse_context,
+        parse_context,
         length,
         ..
       } => {
-        let pc = parse_context.advance(length);
-        let offset = parse_context.offset();
-        ParseResult::successful(parse_context, pc.offset(), length)
+        let pc = parse_context.add_offset(length);
+        ParseResult::successful(parse_context, pc.next_offset(), length)
       }
       ParseResult::Failure {
         parse_context,

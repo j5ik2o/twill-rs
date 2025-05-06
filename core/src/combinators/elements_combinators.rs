@@ -28,17 +28,19 @@ where
   F: Fn(&'a I) -> bool + 'a,
   I: PartialEq + Debug + 'a, {
   Parser::new(move |parse_context: ParseContext<'a, I>| {
+    log::debug!("elm_pred_ref: start");
     let input = parse_context.input();
     if let Some(actual) = input.first() {
       if f(actual) {
+        log::debug!("elm_pred_ref: success");
         return ParseResult::successful(parse_context.with_same_state(), actual, 1);
       }
     }
-    let offset = parse_context.offset();
+    let offset = parse_context.next_offset();
     let msg = format!("offset: {}", offset);
-    let pc = parse_context.with_next_offset();
-    let input = parse_context.input();
-    let pe = ParseError::of_mismatch(input,  pc.offset(), 1, msg);
+    let ps = parse_context.add_offset(1);
+    let pe = ParseError::of_mismatch(input, ps.next_offset(), 1, msg);
+    log::debug!("elm_pred_ref: failed");
     ParseResult::failed_with_uncommitted(parse_context, pe)
   })
 }
@@ -181,7 +183,7 @@ where
         let msg = format!("expect one of: {}, found: {}", set.to_str(), s);
         let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -223,7 +225,7 @@ where
         let msg = format!("expect elm of: {}..={}, found: {}", start, end, s);
         let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -266,7 +268,7 @@ where
         let msg = format!("expect elm from {} until {}, found: {}", start, end, s);
         let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -310,7 +312,7 @@ where
         let msg = format!("expect none of: {}, found: {}", set.to_str(), s);
         let pc = parse_context.with_next_offset();
         let input = parse_context.input();
-        let pe = ParseError::of_mismatch(input, pc.offset(), 1, msg);
+        let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
     } else {
@@ -343,6 +345,8 @@ where
   I: PartialEq + Debug + Clone + 'a,
   'b: 'a, {
   Parser::new(move |parse_context| {
+    log::debug!("seq: start");
+    log::debug!("seq: {:?}", seq);
     let input = parse_context.input();
     let mut index = 0;
     loop {
@@ -352,13 +356,16 @@ where
       if let Some(str) = input.get(index) {
         if seq[index] != *str {
           let msg = format!("seq {:?} expect: {:?}, found: {:?}", seq, seq[index], str);
-          let pc = parse_context.advance(index);
+          let pc = parse_context.add_offset(index);
           let input = parse_context.input();
-          let pe = ParseError::of_mismatch(input, pc.offset(), index, msg);
+          let pe = ParseError::of_mismatch(input, pc.next_offset(), index, msg);
+          log::debug!("seq: failed: {:?}", pe);
           return ParseResult::failed(parse_context, pe, (index != 0).into());
         }
       } else {
-        return ParseResult::failed_with_uncommitted(parse_context, ParseError::of_in_complete());
+        let pe = ParseError::of_in_complete();
+        log::debug!("seq: failed: {:?}", pe);
+        return ParseResult::failed_with_uncommitted(parse_context, pe);
       }
       index += 1;
     }
@@ -394,9 +401,9 @@ where
       if let Some(&actual) = input.get(index) {
         if c != actual {
           let msg = format!("tag {:?} expect: {:?}, found: {}", tag, c, actual);
-          let pc = parse_context.advance(index);
+          let pc = parse_context.add_offset(index);
           let input = parse_context.input();
-          let pe = ParseError::of_mismatch(input, pc.offset(), index, msg);
+          let pe = ParseError::of_mismatch(input, pc.next_offset(), index, msg);
           return ParseResult::failed(parse_context, pe, (index != 0).into());
         }
       } else {
@@ -437,9 +444,9 @@ where
       if let Some(actual) = input.get(index) {
         if !c.eq_ignore_ascii_case(actual) {
           let msg = format!("tag_no_case {:?} expect: {:?}, found: {}", tag, c, actual);
-          let ps = parse_context.advance(index);
+          let ps = parse_context.add_offset(index);
           let input = parse_context.input();
-          let offset = parse_context.offset();
+          let offset = parse_context.next_offset();
           let pe = ParseError::of_mismatch(input, offset, index, msg);
           return ParseResult::failed(ps, pe, (index != 0).into());
         }
@@ -487,7 +494,7 @@ pub fn regex<'a>(pattern: &str) -> Parser<'a, char, String, impl Fn(ParseContext
         _ => {
           let msg = format!("regex {:?} found: {:?}", regex, str);
           let input = parse_context.input();
-          let offset = parse_context.offset();
+          let offset = parse_context.next_offset();
           let pe = ParseError::of_mismatch(input, offset, str.len(), msg);
           ParseResult::failed(parse_context, pe, (captures.len() != 0).into())
         }
@@ -506,7 +513,6 @@ mod tests {
   fn test_elm_ref_in() {
     let text = "abc";
     let input = text.chars().collect::<Vec<_>>();
-    // ファクトリー関数を使用してパーサーを生成
     let char_range = ('a', 'c');
     let p = elm_ref_in(char_range.0, char_range.1);
 
@@ -517,5 +523,16 @@ mod tests {
     let result = p.parse(&input[1..]);
     assert!(result.is_success());
     println!("{:?}", result.success());
+  }
+
+  #[test]
+  fn test_seq_parser_success() {
+    let input = b"abcdef";
+    let parser = seq(b"abc");
+    let result = parser.parse(input);
+    
+    assert!(result.is_success());
+    assert_eq!(result.clone().success().unwrap(), b"abc");
+    assert_eq!(result.consumed_count(), 3);
   }
 }

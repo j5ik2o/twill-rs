@@ -102,7 +102,7 @@ where
           length,
         } => {
           println!("length:{}", length);
-          let mut current_parse_context = pc1.advance(length);
+          let mut current_parse_context = pc1.add_offset(length);
           items.push(value);
           all_length += length;
 
@@ -132,7 +132,7 @@ where
                   length,
                   ..
                 } => {
-                  current_parse_context = pc2.advance(length);
+                  current_parse_context = pc2.add_offset(length);
                   all_length += length;
                   sep_length = length;
                 }
@@ -156,7 +156,7 @@ where
                 value,
                 length,
               } => {
-                current_parse_context = pc3.advance(length);
+                current_parse_context = pc3.add_offset(length);
                 items.push(value);
                 all_length += length;
               }
@@ -171,9 +171,9 @@ where
 
           if let Bound::Included(&min_count) = range.start() {
             if items.len() < min_count {
-              let pc = parse_context.advance(all_length);
+              let pc = parse_context.add_offset(all_length);
               let input = pc.input();
-              let offset = pc.offset();
+              let offset = pc.next_offset();
               let pe = ParseError::of_mismatch(
                 input,
                 offset,

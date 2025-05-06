@@ -81,6 +81,13 @@ impl<'a, I, A> ParseResult<'a, I, A> {
       ParseResult::Success { parse_context, .. } => parse_context,
     }
   }
+  
+  pub fn consumed_count(&self) -> usize {
+    match self {
+      ParseResult::Success { length, .. } => *length,
+      _ => 0,
+    }
+  }
 
   /// Returns whether the parsing was successful or not.
   pub fn is_success(&self) -> bool {

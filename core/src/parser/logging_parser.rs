@@ -24,7 +24,7 @@ where
       } => match error {
         ParseError::Custom { .. } => ParseResult::failed(parse_context, error, is_committed),
         _ => {
-          let offset = parse_context.offset();
+          let offset = parse_context.next_offset();
           ParseResult::failed(
             parse_context,
             ParseError::of_custom(offset, Some(Box::new(error)), format!("failed to parse {}", name)),
@@ -45,7 +45,7 @@ where
         error,
         committed_status: is_committed,
       } => {
-        let offset = parse_context.offset();
+        let offset = parse_context.next_offset();
         ParseResult::failed(
           parse_context,
           ParseError::of_expect(offset, Box::new(error), format!("Expect {}", name)),
@@ -55,13 +55,13 @@ where
     })
   }
 
-  fn log<B, F>(self, name: &'a str, log_level: LogLevel) -> impl ParserRunner<'a, I, A>
+  fn log<B, F>(self, name: &'a str, log_level: LogLevel) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: Display + 'a, {
     self.log_map(name, log_level, |pr| format!("{}", pr))
   }
 
-  fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> impl ParserRunner<'a, I, A>
+  fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: 'a,
     F: Fn(&ParseResult<'a, I, A>) -> B + 'a,

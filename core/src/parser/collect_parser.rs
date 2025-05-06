@@ -10,24 +10,25 @@ where
   where
     I : Debug + 'a,
     A: Debug + 'a, {
-    Parser::new(move |parse_context| match self.run(parse_context) {
-      ParseResult::Success {
-        parse_context, length, ..
-      } => {
-        println!("length: {}", length);
-        println!("parse_context: {:?}", parse_context);
-        let slice = parse_context.slice_with_len(length);
+    Parser::new(move |parse_context| {
+      println!("start: collect");
+      let r = match self.run(parse_context) {
         ParseResult::Success {
-          parse_context,
-          value: slice,
-          length,
+          parse_context, length, ..
+        } => {
+          println!("length: {}", length);
+          println!("parse_context: {:?}", parse_context);
+          let slice = parse_context.slice_with_len(length);
+          ParseResult::successful(parse_context, slice, length)
         }
-      }
-      ParseResult::Failure {
-        parse_context,
-        error,
-        committed_status,
-      } => ParseResult::failed(parse_context, error, committed_status),
+        ParseResult::Failure {
+          parse_context,
+          error,
+          committed_status,
+        } => ParseResult::failed(parse_context, error, committed_status),
+      };
+      println!("end: collect");
+      r
     })
   }
 }

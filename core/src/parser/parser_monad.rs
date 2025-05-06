@@ -27,10 +27,10 @@ pub trait ParserMonad<'a, I: 'a, A>: ParserRunner<'a, I, A> {
         value: a,
         length: n,
       } => {
-        println!("1) parse_context.offset = {}", parse_context.offset());
-        let ps = parse_context.advance(n);
+        log::debug!("1) parse_context.offset = {}", parse_context.next_offset());
+        let ps = parse_context.add_offset(n);
         let result = f(a).run(ps).with_committed_fallback(n != 0).with_add_length(n);
-        println!("2) parse_context.offset = {}", parse_context.offset());
+        log::debug!("2) parse_context.offset = {}", parse_context.next_offset());
         result
       }
       ParseResult::Failure {
