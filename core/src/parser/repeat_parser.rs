@@ -1,6 +1,6 @@
-use std::fmt::Debug;
 use crate::prelude::*;
 use crate::util::{Bound, RangeArgument};
+use std::fmt::Debug;
 
 pub trait RepeatParser<'a, I: 'a, A>: ParserRunner<'a, I, A>
 where

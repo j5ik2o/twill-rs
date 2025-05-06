@@ -1,9 +1,9 @@
-use std::fmt::Debug;
 use crate::parse_context::ParseContext;
 use crate::parse_error::ParseError;
 use crate::parse_result::ParseResult;
 use crate::parser::parser_monad::ParserMonad;
-use crate::parser::{ParserRunner, Parser};
+use crate::parser::{Parser, ParserRunner};
+use std::fmt::Debug;
 
 /// Trait providing result transformation operations for parsers
 pub trait TransformParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + ParserMonad<'a, I, A> + Sized

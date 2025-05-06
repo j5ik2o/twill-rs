@@ -1,14 +1,14 @@
-use std::fmt::Debug;
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{ParserRunner, Parser};
+use crate::parser::{Parser, ParserRunner};
+use std::fmt::Debug;
 
 pub trait CollectParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + Sized
 where
   Self: 'a, {
   fn collect(self) -> Parser<'a, I, &'a [I], impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a [I]> + 'a>
   where
-    I : Debug + 'a,
+    I: Debug + 'a,
     A: Debug + 'a, {
     Parser::new(move |parse_context| {
       match self.run(parse_context) {
@@ -41,8 +41,8 @@ impl<'a, T, I: 'a, A> CollectParser<'a, I, A> for T where T: ParserRunner<'a, I,
 
 #[cfg(test)]
 mod tests {
-  use std::env;
   use crate::prelude::*;
+  use std::env;
 
   #[test]
   fn test_collect_1() {
@@ -66,7 +66,7 @@ mod tests {
 
     let text: &str = "ab";
     let input = text.chars().collect::<Vec<_>>();
-    let p = (elm_ref('a')+elm_ref('b')).collect();
+    let p = (elm_ref('a') + elm_ref('b')).collect();
 
     let result = p.parse(&input).to_result();
     log::debug!("{:?}", result);

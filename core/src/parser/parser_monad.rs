@@ -1,7 +1,7 @@
 use crate::combinators::successful;
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{ParserRunner, Parser};
+use crate::parser::{Parser, ParserRunner};
 
 /// Trait providing parser transformation methods (consuming self)
 pub trait ParserMonad<'a, I: 'a, A>: ParserRunner<'a, I, A> {

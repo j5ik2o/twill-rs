@@ -6,9 +6,7 @@ where
   fn last_offset(self) -> Parser<'a, I, usize, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, usize> + 'a> {
     Parser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
-        parse_context,
-        length,
-        ..
+        parse_context, length, ..
       } => {
         let pc = parse_context.add_offset(length);
         let last_offset = pc.last_offset().unwrap_or(0);
@@ -22,12 +20,10 @@ where
     })
   }
 
-  fn offset(self) -> Parser<'a, I, usize, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, usize> + 'a>  {
+  fn offset(self) -> Parser<'a, I, usize, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, usize> + 'a> {
     Parser::new(move |parse_context| match self.run(parse_context) {
       ParseResult::Success {
-        parse_context,
-        length,
-        ..
+        parse_context, length, ..
       } => {
         let pc = parse_context.add_offset(length);
         ParseResult::successful(parse_context, pc.next_offset(), length)

@@ -22,7 +22,9 @@ use std::fmt::{Debug, Display};
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), &input[0]);
 /// ```
-pub fn elm_pred_ref<'a, I: 'a, F>(f: F) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_pred_ref<'a, I: 'a, F>(
+  f: F,
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   F: Fn(&'a I) -> bool + 'a,
   I: PartialEq + Debug + 'a, {
@@ -72,7 +74,9 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(*result.success().unwrap(), input[0]);
 /// ```
-pub fn elm_ref<'a, I>(element: I) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_ref<'a, I>(
+  element: I,
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: PartialEq + Debug + Clone + 'a, {
   elm_pred_ref(move |actual| *actual == element.clone())
@@ -99,7 +103,7 @@ where
 /// ```
 pub fn elm<'a, I>(element: I) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
 where
-    I: PartialEq + Debug + Clone + 'a, {
+  I: PartialEq + Debug + Clone + 'a, {
   elm_ref(element).map(Clone::clone)
 }
 
@@ -115,11 +119,13 @@ where
   elm_pred_ref(Element::is_ascii_space)
 }
 
-pub fn elm_space<'a, I: Element + PartialEq + Clone + 'a>() -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a> {
+pub fn elm_space<'a, I: Element + PartialEq + Clone + 'a>(
+) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a> {
   elm_space_ref().map(Clone::clone)
 }
 
-pub fn elm_multi_space_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_multi_space_ref<'a, I>(
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_multi_space)
@@ -131,7 +137,8 @@ where
   elm_pred_ref(Element::is_ascii_alpha)
 }
 
-pub fn elm_alpha_digit_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_alpha_digit_ref<'a, I>(
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_alpha_digit)
@@ -194,7 +201,9 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_of<'a, I, S>(set: &'a S) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_ref_of<'a, I, S>(
+  set: &'a S,
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: PartialEq + Display + Debug + Clone + 'a,
   S: Set<I> + ?Sized, {
@@ -238,7 +247,10 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_in<'a, I>(start: I, end: I)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_ref_in<'a, I>(
+  start: I,
+  end: I,
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: PartialEq + PartialOrd + Display + Debug + Copy + 'a, {
   Parser::new(move |parse_context| {
@@ -281,7 +293,10 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_from_until<'a, I>(start: I, end: I)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn elm_ref_from_until<'a, I>(
+  start: I,
+  end: I,
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: PartialEq + PartialOrd + Display + Debug + Copy + 'a, {
   // クローン可能なパーサーを実装
@@ -323,7 +338,9 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn none_ref_of<'a, I, S>(set: &'a S)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+pub fn none_ref_of<'a, I, S>(
+  set: &'a S,
+) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: PartialEq + Display + Debug + Clone + 'a,
   S: Set<I> + ?Sized, {
@@ -363,7 +380,9 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn seq<'a, 'b, I>(seq: &'b [I]) -> Parser<'a, I, &'a [I], impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a [I]> + 'a>
+pub fn seq<'a, 'b, I>(
+  seq: &'b [I],
+) -> Parser<'a, I, &'a [I], impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a [I]> + 'a>
 where
   I: PartialEq + Debug + Clone + 'a,
   'b: 'a, {
@@ -414,7 +433,9 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn tag<'a, 'b>(tag: &'b str) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
+pub fn tag<'a, 'b>(
+  tag: &'b str,
+) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
 where
   'b: 'a, {
   Parser::new(move |parse_context| {
@@ -457,7 +478,9 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn tag_no_case<'a, 'b>(tag: &'b str) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
+pub fn tag_no_case<'a, 'b>(
+  tag: &'b str,
+) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a>
 where
   'b: 'a, {
   Parser::new(move |parse_context| {
@@ -501,7 +524,9 @@ where
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn regex<'a>(pattern: &str) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a> {
+pub fn regex<'a>(
+  pattern: &str,
+) -> Parser<'a, char, String, impl Fn(ParseContext<'a, char>) -> ParseResult<'a, char, String> + 'a> {
   let pattern = if !pattern.starts_with("^") {
     format!("^{}", pattern)
   } else {
@@ -554,16 +579,16 @@ mod tests {
   }
   #[test]
   fn test_seq_success_0() {
-     let text: &str = "abc";
-     let input = text.as_bytes();
+    let text: &str = "abc";
+    let input = text.as_bytes();
 
     let parser = seq(b"abc").collect().map_res(std::str::from_utf8);
 
     let result: ParseResult<u8, &str> = parser.parse(input);
 
-     assert!(result.is_success());
-     assert_eq!(result.consumed_count(), 3);
-     assert_eq!(result.success().unwrap(), text);
+    assert!(result.is_success());
+    assert_eq!(result.consumed_count(), 3);
+    assert_eq!(result.success().unwrap(), text);
   }
 
   #[test]
@@ -571,7 +596,7 @@ mod tests {
     let input = b"abc";
     let parser = seq(b"abc");
     let result = parser.parse(input);
-    
+
     assert!(result.is_success());
     assert_eq!(result.clone().success().unwrap(), b"abc");
     assert_eq!(result.consumed_count(), 3);
@@ -598,6 +623,4 @@ mod tests {
     assert_eq!(result.consumed_count(), 0);
     assert!(result.failure().unwrap().is_in_complete());
   }
-
-
 }

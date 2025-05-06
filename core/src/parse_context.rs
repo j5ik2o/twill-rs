@@ -33,19 +33,25 @@ impl<'a, I> ParseContext<'a, I> {
   }
 
   /// Get the remaining input slice
-  pub fn input(&self) -> &'a [I] where I: Debug {
+  pub fn input(&self) -> &'a [I]
+  where
+    I: Debug, {
     log::debug!("input::offset = {:?}", self.offset);
     &self.input[self.offset..]
   }
 
   /// Get a slice of specified length from the current position
-  pub fn slice_with_len(&self, n: usize) -> &'a [I] where I: Debug {
+  pub fn slice_with_len(&self, n: usize) -> &'a [I]
+  where
+    I: Debug, {
     log::debug!("slice_with_len::offset = {:?}", self.offset);
     log::debug!("slice_with_len::n = {:?}", n);
     &self.input[self.offset..self.offset + n]
   }
 
-  pub fn slice_with_offset_len(&self, offset: usize, n: usize) -> &'a [I] where I: Debug {
+  pub fn slice_with_offset_len(&self, offset: usize, n: usize) -> &'a [I]
+  where
+    I: Debug, {
     &self.input[offset..offset + n]
   }
 

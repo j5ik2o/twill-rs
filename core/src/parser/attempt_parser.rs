@@ -1,6 +1,6 @@
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{ParserRunner, Parser};
+use crate::parser::{Parser, ParserRunner};
 
 pub trait AttemptParser<'a, I: 'a, A>: ParserRunner<'a, I, A>
 where

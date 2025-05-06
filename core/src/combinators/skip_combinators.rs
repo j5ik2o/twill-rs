@@ -1,6 +1,6 @@
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{ParserRunner, Parser, SkipParser};
+use crate::parser::{Parser, ParserRunner, SkipParser};
 
 /// Return a [ClonableParser] that skips the previous and following [ClonableParser]s.
 ///
@@ -30,7 +30,11 @@ use crate::parser::{ParserRunner, Parser, SkipParser};
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "abc");
 /// ```
-pub fn surround<'a, I: Clone + 'a, A, B, C, P1, P2, P3>(lp: P1, parser: P2, rp: P3) -> Parser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
+pub fn surround<'a, I: Clone + 'a, A, B, C, P1, P2, P3>(
+  lp: P1,
+  parser: P2,
+  rp: P3,
+) -> Parser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
 where
   A: Clone + 'a,
   B: Clone + 'a,

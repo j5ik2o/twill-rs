@@ -55,13 +55,22 @@ where
     })
   }
 
-  fn log<B, F>(self, name: &'a str, log_level: LogLevel) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  fn log<B, F>(
+    self,
+    name: &'a str,
+    log_level: LogLevel,
+  ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: Display + 'a, {
     self.log_map(name, log_level, |pr| format!("{}", pr))
   }
 
-  fn log_map<B, F>(self, name: &'a str, log_level: LogLevel, f: F) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  fn log_map<B, F>(
+    self,
+    name: &'a str,
+    log_level: LogLevel,
+    f: F,
+  ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     A: 'a,
     F: Fn(&ParseResult<'a, I, A>) -> B + 'a,

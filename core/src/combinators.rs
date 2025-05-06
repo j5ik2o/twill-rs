@@ -11,7 +11,9 @@ pub use take_combinators::*;
 use crate::prelude::*;
 use std::fmt::{Debug, Display};
 
-pub fn successful<'a, I: 'a, A: Clone + 'a>(value: A) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a> {
+pub fn successful<'a, I: 'a, A: Clone + 'a>(
+  value: A,
+) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a> {
   Parser::new(move |parse_context| ParseResult::successful(parse_context, value.clone(), 0))
 }
 

@@ -81,7 +81,7 @@ impl<'a, I, A> ParseResult<'a, I, A> {
       ParseResult::Success { parse_context, .. } => parse_context,
     }
   }
-  
+
   pub fn consumed_count(&self) -> usize {
     match self {
       ParseResult::Success { length, .. } => *length,

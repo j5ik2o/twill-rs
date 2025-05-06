@@ -2,7 +2,7 @@ use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
 use crate::parser::and_then_parser::AndThenParser;
 use crate::parser::parser_monad::ParserMonad;
-use crate::parser::{ParserRunner, Parser};
+use crate::parser::{Parser, ParserRunner};
 use std::ops::{Mul, Sub};
 
 /// Trait providing sequence-related parser operations (consuming self)
@@ -30,12 +30,12 @@ pub trait SkipParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + ParserMonad<'a, I, 
 
 impl<'a, I: 'a, F, G, A, B> Mul<Parser<'a, I, B, G>> for Parser<'a, I, A, F>
 where
-    Self: SkipParser<'a, I, A>,
-    A: Clone + 'a,
-    B: Clone + 'a,
-    Parser<'a, I, B, G>: ParserRunner<'a, I, B> + 'a,
-    F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
-    G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
+  Self: SkipParser<'a, I, A>,
+  A: Clone + 'a,
+  B: Clone + 'a,
+  Parser<'a, I, B, G>: ParserRunner<'a, I, B> + 'a,
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
 {
   type Output = impl ParserRunner<'a, I, B>;
 
@@ -46,12 +46,12 @@ where
 
 impl<'a, I: 'a, F, G, A, B> Sub<Parser<'a, I, B, G>> for Parser<'a, I, A, F>
 where
-    Self: SkipParser<'a, I, A>,
-    A: Clone + 'a,
-    B: Clone + 'a,
-    Parser<'a, I, B, G>: ParserRunner<'a, I, B> + 'a,
-    F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
-    G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
+  Self: SkipParser<'a, I, A>,
+  A: Clone + 'a,
+  B: Clone + 'a,
+  Parser<'a, I, B, G>: ParserRunner<'a, I, B> + 'a,
+  F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+  G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
 {
   type Output = impl ParserRunner<'a, I, A>;
 

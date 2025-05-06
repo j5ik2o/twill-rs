@@ -1,6 +1,6 @@
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{ParserRunner, Parser};
+use crate::parser::{Parser, ParserRunner};
 
 /// Provide alternative parser operations
 pub trait OrParser<'a, I: 'a, A>: ParserRunner<'a, I, A>

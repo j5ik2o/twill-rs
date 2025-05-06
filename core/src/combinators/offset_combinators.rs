@@ -1,5 +1,5 @@
-use std::fmt::Debug;
 use crate::prelude::*;
+use std::fmt::Debug;
 
 /// Returns a [ClonableParser] that skips the specified number of elements.
 ///
@@ -23,7 +23,9 @@ use crate::prelude::*;
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), "def");
 /// ```
-pub fn skip<'a, I: Clone + 'a>(n: usize) -> impl ParserRunner<'a, I, ()> where I: Debug {
+pub fn skip<'a, I: Clone + 'a>(n: usize) -> impl ParserRunner<'a, I, ()>
+where
+  I: Debug, {
   Parser::new(move |parse_context| {
     let input = parse_context.input();
     if input.len() >= n {

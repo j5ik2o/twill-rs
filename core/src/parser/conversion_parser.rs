@@ -4,7 +4,7 @@ use std::fmt::Debug;
 pub trait ConversionParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + Sized {
   fn map_res<B, E, F>(self, f: F) -> Parser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
-      I: Debug ,
+    I: Debug,
     F: Fn(A) -> Result<B, E> + 'a,
     E: Debug,
     A: 'a,
@@ -35,7 +35,7 @@ pub trait ConversionParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + Sized {
 
   fn map_opt<B, E, F>(self, f: F) -> Parser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>
   where
-      I: Debug,
+    I: Debug,
     F: Fn(A) -> Option<B> + 'a,
     A: 'a,
     B: 'a, {

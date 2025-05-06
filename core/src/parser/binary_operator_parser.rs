@@ -1,10 +1,11 @@
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
-use crate::parser::{OrParser, ParserRunner, ParserMonad, Parser};
+use crate::parser::{OrParser, Parser, ParserMonad, ParserRunner};
 use crate::prelude::successful;
 
 /// Trait providing binary operator related parser operations
-pub trait BinaryOperatorParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
+pub trait BinaryOperatorParser<'a, I: 'a, A>:
+  ParserRunner<'a, I, A> + ParserMonad<'a, I, A> + OrParser<'a, I, A>
 where
   Self: 'a, {
   /// Right associative binary operator parsing
@@ -21,10 +22,7 @@ where
   }
 
   /// Left associative binary operator parsing
-  fn chain_left1<P2, OP>(
-    self,
-    op: P2,
-  ) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
+  fn chain_left1<P2, OP>(self, op: P2) -> Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>
   where
     Self: Clone + 'a,
     A: Clone + 'a,
