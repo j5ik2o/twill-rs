@@ -13,9 +13,8 @@ fn main() {
   let world = seq(b"world");
   
   // 段階的に組み合わせる
-  let hello_space = hello + space;
-  let hello_space_world = hello_space + world;
-  let p = hello_space_world.collect();
+  let hello_space = hello + space + world;
+  let p = hello_space.collect();
   
   // 結果を処理
   let result = p.parse(input).to_result().unwrap();

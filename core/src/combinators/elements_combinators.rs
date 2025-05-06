@@ -78,6 +78,31 @@ where
   elm_pred_ref(move |actual| *actual == element.clone())
 }
 
+/// Returns a [ClonableParser] that parses the specified element.(for value)
+///
+/// - element: element
+///
+/// # Example
+///
+/// ```rust
+/// # use twill_core::prelude::*;
+///
+/// let text: &str = "x";
+/// let input: Vec<char> = text.chars().collect::<Vec<_>>();
+///
+/// let parser = elm('x');
+///
+/// let result = parser.parse(&input);
+///
+/// assert!(result.is_success());
+/// assert_eq!(result.success().unwrap(), input[0]);
+/// ```
+pub fn elm<'a, I>(element: I) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
+where
+    I: PartialEq + Debug + Clone + 'a, {
+  elm_ref(element).map(Clone::clone)
+}
+
 pub fn elm_any_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
@@ -456,6 +481,7 @@ where
     ParseResult::successful(parse_context, tag.to_string(), index)
   })
 }
+
 /// Returns a [ClonableParser] that parses a string that match a regular expression.
 ///
 /// - pattern: a regular expression
@@ -508,7 +534,7 @@ mod tests {
   use crate::prelude::*;
 
   #[test]
-  fn test_elm_ref_in() {
+  fn test_elm_ref_in_success_1() {
     let text = "abc";
     let input = text.chars().collect::<Vec<_>>();
     let char_range = ('a', 'c');
@@ -516,16 +542,33 @@ mod tests {
 
     let result = p.parse(&input[0..]);
     assert!(result.is_success());
-    println!("{:?}", result.success());
+    assert_eq!(*result.success().unwrap(), 'a');
 
     let result = p.parse(&input[1..]);
     assert!(result.is_success());
-    println!("{:?}", result.success());
+    assert_eq!(*result.success().unwrap(), 'b');
+
+    let result = p.parse(&input[2..]);
+    assert!(result.is_success());
+    assert_eq!(*result.success().unwrap(), 'c');
+  }
+  #[test]
+  fn test_seq_success_0() {
+     let text: &str = "abc";
+     let input = text.as_bytes();
+
+    let parser = seq(b"abc").collect().map_res(std::str::from_utf8);
+
+    let result: ParseResult<u8, &str> = parser.parse(input);
+
+     assert!(result.is_success());
+     assert_eq!(result.consumed_count(), 3);
+     assert_eq!(result.success().unwrap(), text);
   }
 
   #[test]
-  fn test_seq_parser_success() {
-    let input = b"abcdef";
+  fn test_seq_success_1() {
+    let input = b"abc";
     let parser = seq(b"abc");
     let result = parser.parse(input);
     
@@ -533,4 +576,28 @@ mod tests {
     assert_eq!(result.clone().success().unwrap(), b"abc");
     assert_eq!(result.consumed_count(), 3);
   }
+
+  #[test]
+  fn test_seq_success_2() {
+    let input = b"abcdef";
+    let parser = seq(b"abc");
+    let result = parser.parse(input);
+
+    assert!(result.is_success());
+    assert_eq!(result.consumed_count(), 3);
+    assert_eq!(result.success().unwrap(), b"abc");
+  }
+
+  #[test]
+  fn test_seq_failure() {
+    let input = b"ab";
+    let parser = seq(b"abc");
+    let result = parser.parse(input);
+
+    assert!(result.is_failure());
+    assert_eq!(result.consumed_count(), 0);
+    assert!(result.failure().unwrap().is_in_complete());
+  }
+
+
 }
