@@ -1,3 +1,4 @@
+use std::ops::BitOr;
 use crate::parse_context::ParseContext;
 use crate::parse_result::ParseResult;
 use crate::parser::{Parser, ParserRunner};
@@ -20,6 +21,17 @@ where
       }
       result
     })
+  }
+}
+
+impl<'a, I, A, F> BitOr<Parser<'a, I, A, F>> for Parser<'a, I, A, F>
+where
+    A: Clone + 'a,
+    F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
+  type Output = Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>;
+
+  fn bitor(self, rhs: Parser<'a, I, A, F>) -> Self::Output {
+    self.or(rhs) 
   }
 }
 

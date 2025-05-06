@@ -113,6 +113,13 @@ where
   elm_pred_ref(|_| true)
 }
 
+pub fn elm_any<'a, I>() -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
+where
+    I: Element + PartialEq + Clone + 'a,
+{
+  elm_any_ref().map(Clone::clone)
+}
+
 pub fn elm_space_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
   I: Element + PartialEq + 'a, {
@@ -129,6 +136,14 @@ pub fn elm_multi_space_ref<'a, I>(
 where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_multi_space)
+}
+
+pub fn elm_multi_space<'a, I>(
+) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
+where
+    I: Element + PartialEq + Clone + 'a,
+{
+  elm_multi_space_ref().map(Clone::clone)
 }
 
 pub fn elm_alpha_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
@@ -149,6 +164,13 @@ where
   I: Element + PartialEq + 'a, {
   elm_pred_ref(Element::is_ascii_digit)
 }
+
+pub fn elm_digit_1_9_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
+where
+    I: Element + PartialEq + 'a, {
+  elm_digit_ref().with_filter_not(|c: &&I| c.is_ascii_digit_zero())
+}
+
 
 pub fn elm_hex_digit_ref<'a, I>() -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
@@ -194,14 +216,14 @@ where
 /// let text: &str = "xyz";
 /// let input = text.chars().collect::<Vec<_>>();
 ///
-/// let parser = elm_ref_of("xyz").of_many1().map(|chars| chars.into_iter().map(|c| *c).collect::<String>());
+/// let parser = elm_of_ref("xyz").of_many1().map(|chars| chars.into_iter().map(|c| *c).collect::<String>());
 ///
 /// let result = parser.parse(&input);
 ///
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_of<'a, I, S>(
+pub fn elm_of_ref<'a, I, S>(
   set: &'a S,
 ) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
@@ -226,6 +248,16 @@ where
   })
 }
 
+pub fn elm_of<'a, I, S>(
+  set: &'a S,
+) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
+where
+    I: PartialEq + Display + Debug + Clone + 'a,
+    S: Set<I> + ?Sized,
+{
+  elm_of_ref(set).map(Clone::clone)
+}
+
 /// Returns a [ClonableParser] that parses the elements in the specified range. (for reference)
 ///
 /// - start: start element
@@ -240,14 +272,14 @@ where
 /// let text: &str = "xyz";
 /// let input = text.chars().collect::<Vec<_>>();
 ///
-/// let parser = elm_ref_in('x', 'z').of_many1().map(String::from_iter);
+/// let parser = elm_in_ref('x', 'z').of_many1().map(String::from_iter);
 ///
 /// let result = parser.parse(&input);
 ///
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_in<'a, I>(
+pub fn elm_in_ref<'a, I>(
   start: I,
   end: I,
 ) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
@@ -272,6 +304,16 @@ where
   })
 }
 
+pub fn elm_in<'a, I>(
+  start: I,
+  end: I,
+) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
+where
+    I: PartialEq + PartialOrd + Display + Debug + Copy + 'a,
+{
+  elm_in_ref(start, end).map(Clone::clone)
+}
+
 /// Returns a [ClonableParser] that parses the elements in the specified range. (for reference)
 ///
 /// - start: a start element
@@ -286,14 +328,14 @@ where
 /// let text: &str = "wxy";
 /// let input = text.chars().collect::<Vec<_>>();
 ///
-/// let parser = elm_ref_from_until('w', 'z').of_many1().map(String::from_iter);
+/// let parser = elm_from_until_ref('w', 'z').of_many1().map(String::from_iter);
 ///
 /// let result = parser.parse(&input);
 ///
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn elm_ref_from_until<'a, I>(
+pub fn elm_from_until_ref<'a, I>(
   start: I,
   end: I,
 ) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
@@ -318,6 +360,16 @@ where
   })
 }
 
+pub fn elm_from_until<'a, I>(
+  start: I,
+  end: I,
+) -> Parser<'a, I, I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, I> + 'a>
+where
+    I: PartialEq + PartialOrd + Display + Debug + Copy + 'a,
+{
+  elm_from_until_ref(start, end).map(Clone::clone)
+}
+
 /// Returns a [ClonableParser] that parses elements that do not contain elements of the specified set.(for reference)
 ///
 /// - set: a element of sets
@@ -331,14 +383,14 @@ where
 /// let text: &str = "xyz";
 /// let input = text.chars().collect::<Vec<_>>();
 ///
-/// let parser = none_ref_of("abc").of_many1().map(String::from_iter);
+/// let parser = none_of_ref("abc").of_many1().map(String::from_iter);
 ///
 /// let result = parser.parse(&input);
 ///
 /// assert!(result.is_success());
 /// assert_eq!(result.success().unwrap(), text);
 /// ```
-pub fn none_ref_of<'a, I, S>(
+pub fn none_of_ref<'a, I, S>(
   set: &'a S,
 ) -> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
@@ -563,7 +615,7 @@ mod tests {
     let text = "abc";
     let input = text.chars().collect::<Vec<_>>();
     let char_range = ('a', 'c');
-    let p = elm_ref_in(char_range.0, char_range.1);
+    let p = elm_in_ref(char_range.0, char_range.1);
 
     let result = p.parse(&input[0..]);
     assert!(result.is_success());

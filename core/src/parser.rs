@@ -15,6 +15,7 @@ mod parser_monad;
 mod repeat_parser;
 mod skip_parser;
 mod transform_parser;
+mod opt_parser;
 
 pub use and_then_parser::*;
 pub use attempt_parser::*;

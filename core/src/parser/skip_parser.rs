@@ -37,7 +37,7 @@ where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
 {
-  type Output = impl ParserRunner<'a, I, B>;
+  type Output = Parser<'a, I, B, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a>;
 
   fn mul(self, rhs: Parser<'a, I, B, G>) -> Self::Output {
     self.skip_left(rhs)
@@ -53,7 +53,7 @@ where
   F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
   G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, B> + 'a,
 {
-  type Output = impl ParserRunner<'a, I, A>;
+  type Output = Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>;
 
   fn sub(self, rhs: Parser<'a, I, B, G>) -> Self::Output {
     self.skip_right(rhs)
