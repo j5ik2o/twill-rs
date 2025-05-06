@@ -29,7 +29,7 @@ where
     let input = parse_context.input();
     if let Some(actual) = input.first() {
       let msg = format!("expect end of input, found: {}", actual);
-      let pc = parse_context.with_next_offset();
+      let pc = parse_context.add_offset(1);
       let input = parse_context.input();
       let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
       ParseResult::failed_with_uncommitted(parse_context, pe)

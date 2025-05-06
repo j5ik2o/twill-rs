@@ -17,7 +17,7 @@ pub trait ConversionParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + Sized {
       } => match f(a) {
         Ok(value) => ParseResult::successful(parse_context, value, length),
         Err(err) => {
-          let pc = parse_context.with_same_state();
+          let pc = parse_context.add_offset(0);
           let msg = format!("Conversion error: {:?}", err);
           let input = pc.input();
           let offset = pc.last_offset().unwrap_or(0);
@@ -51,7 +51,7 @@ pub trait ConversionParser<'a, I: 'a, A>: ParserRunner<'a, I, A> + Sized {
           let msg = "Conversion error".to_string();
           let input = pc.input();
           let offset = pc.last_offset().unwrap_or(0);
-          let parser_error = ParseError::of_conversion(input, offset, 0, "Conversion error".to_string());
+          let parser_error = ParseError::of_conversion(input, offset, 0, msg);
           ParseResult::failed_with_uncommitted(parse_context, parser_error)
         }
       },

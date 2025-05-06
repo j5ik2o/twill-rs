@@ -32,11 +32,6 @@ impl<'a, I> ParseContext<'a, I> {
     Self::new(self.input, self.offset + n)
   }
 
-  /// Create a new context by advancing exactly 1 position
-  pub fn with_next_offset(&self) -> ParseContext<'a, I> {
-    Self::new(self.input, self.offset + 1)
-  }
-
   /// Get the remaining input slice
   pub fn input(&self) -> &'a [I] where I: Debug {
     log::debug!("input::offset = {:?}", self.offset);

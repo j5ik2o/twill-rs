@@ -2,7 +2,6 @@ use crate::prelude::*;
 use crate::util::Set;
 use regex::Regex;
 use std::fmt::{Debug, Display};
-use log::log_enabled;
 
 /// Returns a [ClonableParser] that parses the elements that satisfy the specified closure conditions.(for reference)
 ///
@@ -32,6 +31,8 @@ where
     let input = parse_context.input();
     if let Some(actual) = input.first() {
       if f(actual) {
+        log::debug!("parse_context: {:?}", parse_context);
+        log::debug!("elm_pred_ref: actual: {:?}", actual);
         log::debug!("elm_pred_ref: success");
         return ParseResult::successful(parse_context.with_same_state(), actual, 1);
       }
@@ -172,17 +173,16 @@ pub fn elm_ref_of<'a, I, S>(set: &'a S) -> Parser<'a, I, &'a I, impl Fn(ParseCon
 where
   I: PartialEq + Display + Debug + Clone + 'a,
   S: Set<I> + ?Sized, {
-  let set_ptr = set as *const S;
+  // let set_ptr = set as *const S;
   Parser::new(move |parse_context| {
-    let set = unsafe { &*set_ptr };
+    // let set = unsafe { &*set_ptr };
     let input = parse_context.input();
     if let Some(s) = input.first() {
       if set.contains(s) {
         ParseResult::successful(parse_context, s, 1)
       } else {
         let msg = format!("expect one of: {}, found: {}", set.to_str(), s);
-        let pc = parse_context.with_next_offset();
-        let input = parse_context.input();
+        let pc = parse_context.add_offset(1);
         let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
@@ -215,15 +215,16 @@ where
 /// ```
 pub fn elm_ref_in<'a, I>(start: I, end: I)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  I: PartialEq + PartialOrd + Display + Debug + Clone + 'a, {
+  I: PartialEq + PartialOrd + Display + Debug + Copy + 'a, {
   Parser::new(move |parse_context| {
+    let set = start..=end;
     let input = parse_context.input();
     if let Some(s) = input.first() {
-      if *s >= start && *s <= end {
+      if set.contains(s) {
         ParseResult::successful(parse_context, s, 1)
       } else {
-        let msg = format!("expect elm of: {}..={}, found: {}", start, end, s);
-        let pc = parse_context.with_next_offset();
+        let msg = format!("expect elm of: {}, found: {}", set.to_str(), s);
+        let pc = parse_context.add_offset(1);
         let input = parse_context.input();
         let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
@@ -257,17 +258,17 @@ where
 /// ```
 pub fn elm_ref_from_until<'a, I>(start: I, end: I)-> Parser<'a, I, &'a I, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, &'a I> + 'a>
 where
-  I: PartialEq + PartialOrd + Display + Debug + Clone + 'a, {
+  I: PartialEq + PartialOrd + Display + Debug + Copy + 'a, {
   // クローン可能なパーサーを実装
   Parser::new(move |parse_context| {
+    let set = start..end;
     let input = parse_context.input();
     if let Some(s) = input.first() {
-      if *s >= start && *s < end {
+      if set.contains(s) {
         ParseResult::successful(parse_context, s, 1)
       } else {
-        let msg = format!("expect elm from {} until {}, found: {}", start, end, s);
-        let pc = parse_context.with_next_offset();
-        let input = parse_context.input();
+        let msg = format!("expect elm of: {}, found: {}", set.to_str(), s);
+        let pc = parse_context.add_offset(1);
         let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
@@ -301,17 +302,14 @@ pub fn none_ref_of<'a, I, S>(set: &'a S)-> Parser<'a, I, &'a I, impl Fn(ParseCon
 where
   I: PartialEq + Display + Debug + Clone + 'a,
   S: Set<I> + ?Sized, {
-  let set_ptr = set as *const S;
   Parser::new(move |parse_context| {
-    let set = unsafe { &*set_ptr };
     let input = parse_context.input();
     if let Some(s) = input.first() {
       if !set.contains(s) {
         ParseResult::successful(parse_context, s, 1)
       } else {
         let msg = format!("expect none of: {}, found: {}", set.to_str(), s);
-        let pc = parse_context.with_next_offset();
-        let input = parse_context.input();
+        let pc = parse_context.add_offset(1);
         let pe = ParseError::of_mismatch(input, pc.next_offset(), 1, msg);
         ParseResult::failed_with_uncommitted(parse_context, pe)
       }
