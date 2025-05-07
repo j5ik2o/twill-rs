@@ -29,6 +29,7 @@ pub use parser_monad::*;
 pub use repeat_parser::*;
 pub use skip_parser::*;
 pub use transform_parser::*;
+pub use opt_parser::*;
 
 pub trait ParserRunner<'a, I: 'a, A>: Clone + Sized + 'a {
   // type P<'p, XI: 'p, XA, XF> = RcParser<'p, XI, XA, XF> where XF: Fn(ParseContext<'p, XI>) -> ParseResult<'p, XI, XA> + 'p;

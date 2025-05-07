@@ -21,17 +21,22 @@ where
       }
       result
     })
+
+
   }
+
 }
 
-impl<'a, I, A, F> BitOr<Parser<'a, I, A, F>> for Parser<'a, I, A, F>
+impl<'a, I, A, F, G> BitOr<Parser<'a, I, A, F>> for Parser<'a, I, A, G>
 where
     A: Clone + 'a,
-    F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a, {
+    F: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+    G: Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a,
+{
   type Output = Parser<'a, I, A, impl Fn(ParseContext<'a, I>) -> ParseResult<'a, I, A> + 'a>;
 
   fn bitor(self, rhs: Parser<'a, I, A, F>) -> Self::Output {
-    self.or(rhs) 
+    self.or(rhs)
   }
 }
 
@@ -59,6 +64,31 @@ mod tests {
       let text: &str = "b";
       let input = text.chars().collect::<Vec<_>>();
       let p = elm_ref('a').or(elm_ref('b'));
+
+      let result = p.parse(&input).to_result();
+      println!("{:?}", result);
+
+      assert!(result.is_ok());
+    }
+  }
+
+  #[test]
+  fn test_or_2() {
+    {
+      let text: &str = "a";
+      let input = text.chars().collect::<Vec<_>>();
+      let p = elm_ref('a') | (elm_ref('b'));
+
+      let result = p.parse(&input).to_result();
+      println!("{:?}", result);
+
+      assert!(result.is_ok());
+    }
+
+    {
+      let text: &str = "b";
+      let input = text.chars().collect::<Vec<_>>();
+      let p = elm_ref('a') | (elm_ref('b'));
 
       let result = p.parse(&input).to_result();
       println!("{:?}", result);
